@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartSpin | Account</title>
+  <link rel="icon" type="image/png" href="../assets/logo_notext.png" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a class="brand" href="index.html">
+      <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
+      <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="image.html">Image</a></li>
+      <li><a href="chat.html">Chat</a></li>
+      <li><a href="accounts.html" class="active" aria-current="page">Account</a></li>
+    </ul>
+  </nav>
+
+  <main class="container auth-container" id="accountRoot"></main>
+
+  <script>
+    const accountRoot = document.getElementById("accountRoot");
+    const API_BASE =
+      window.location.port === "5500"
+        ? "http://127.0.0.1:3000"
+        : window.location.origin;
+
+    function setMessage(text, type = "error") {
+      const msg = document.getElementById("authMessage");
+      msg.textContent = text;
+      msg.className = `auth-message ${type}`;
+    }
+
+    function clearMessage() {
+      const msg = document.getElementById("authMessage");
+      msg.textContent = "";
+      msg.className = "auth-message";
+    }
+
+    function switchTab(tabName, keepMessage = false) {
+      const loginSection = document.getElementById("loginSection");
+      const signupSection = document.getElementById("signupSection");
+      const loginTab = document.getElementById("loginTab");
+      const signupTab = document.getElementById("signupTab");
+
+      if (tabName === "signup") {
+        loginSection.hidden = true;
+        signupSection.hidden = false;
+        loginTab.classList.remove("active");
+        signupTab.classList.add("active");
+      } else {
+        loginSection.hidden = false;
+        signupSection.hidden = true;
+        signupTab.classList.remove("active");
+        loginTab.classList.add("active");
+      }
+      if (!keepMessage) {
+        clearMessage();
+      }
+    }
+
+    function renderAuthForms() {
+      accountRoot.innerHTML = `
+        <h1>Account</h1>
+        <p>Log in or create an account.</p>
+        <div class="auth-toggle">
+          <button id="loginTab" type="button" class="auth-tab active">Log in</button>
+          <button id="signupTab" type="button" class="auth-tab">Sign up</button>
+        </div>
+        <p id="authMessage" class="auth-message"></p>
+
+        <section id="loginSection">
+          <form id="loginForm" class="auth-form" autocomplete="on">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" name="email" type="email" required placeholder="you@example.com" />
+
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" name="password" type="password" required placeholder="Enter your password" />
+
+            <button type="submit" class="btn-primary">Log in</button>
+          </form>
+        </section>
+
+        <section id="signupSection" hidden>
+          <form id="signupForm" class="auth-form" autocomplete="on">
+            <label for="signupUsername">Username</label>
+            <input id="signupUsername" name="username" type="text" minlength="3" required placeholder="Choose a username" />
+
+            <label for="signupEmail">Email</label>
+            <input id="signupEmail" name="email" type="email" required placeholder="you@example.com" />
+
+            <label for="signupPassword">Password</label>
+            <input id="signupPassword" name="password" type="password" minlength="6" required placeholder="Create a password" />
+
+            <label for="signupPasswordConfirm">Confirm Password</label>
+            <input id="signupPasswordConfirm" name="password_confirm" type="password" minlength="6" required placeholder="Re-enter password" />
+
+            <button type="submit" class="btn-primary">Sign up</button>
+          </form>
+        </section>
+      `;
+
+      document.getElementById("loginTab").addEventListener("click", () => switchTab("login"));
+      document.getElementById("signupTab").addEventListener("click", () => switchTab("signup"));
+
+      document.getElementById("loginForm").addEventListener("submit", handleLogin);
+      document.getElementById("signupForm").addEventListener("submit", handleSignup);
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+      const password = document.getElementById("loginPassword").value;
+      try {
+        const response = await fetch(`${API_BASE}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password })
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setMessage("No account found for this email. Please sign up.", "error");
+            switchTab("signup", true);
+            document.getElementById("signupEmail").value = email;
+            return;
+          }
+          setMessage(payload.error || "Login failed.", "error");
+          return;
+        }
+
+        renderLoggedIn(payload.account);
+      } catch {
+        setMessage("Unable to reach server. Start server.js and use port 3000.", "error");
+      }
+    }
+
+    async function handleSignup(event) {
+      event.preventDefault();
+      const username = document.getElementById("signupUsername").value.trim();
+      const email = document.getElementById("signupEmail").value.trim().toLowerCase();
+      const password = document.getElementById("signupPassword").value;
+      const passwordConfirm = document.getElementById("signupPasswordConfirm").value;
+
+      if (password !== passwordConfirm) {
+        setMessage("Passwords do not match.", "error");
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE}/api/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, email, password })
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 409 && payload.error?.includes("email")) {
+            setMessage("Email already exists. Please log in.", "error");
+            switchTab("login", true);
+            document.getElementById("loginEmail").value = email;
+            return;
+          }
+          setMessage(payload.error || "Sign up failed.", "error");
+          return;
+        }
+
+        renderLoggedIn(payload.account);
+      } catch {
+        setMessage("Unable to reach server. Start server.js and use port 3000.", "error");
+      }
+    }
+
+    function renderLoggedIn(account) {
+      accountRoot.innerHTML = `
+        <h1>Account</h1>
+        <p>You are logged in as <strong id="acctUser"></strong>.</p>
+        <p class="account-meta">Email: <span id="acctEmail"></span></p>
+        <p class="account-meta">Created: <span id="acctCreated"></span></p>
+        <div class="auth-actions">
+          <a class="btn-primary" href="chat.html">Go to Chat</a>
+          <button id="logoutBtn" type="button" class="btn-secondary">Log out</button>
+        </div>
+      `;
+
+      document.getElementById("acctUser").textContent = account.Username || "User";
+      document.getElementById("acctEmail").textContent = account.Email || "";
+      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
+
+      document.getElementById("logoutBtn").addEventListener("click", async () => {
+        try {
+          await fetch(`${API_BASE}/api/logout`, {
+            method: "POST",
+            credentials: "include"
+          });
+        } catch {}
+        renderAuthForms();
+      });
+    }
+
+    // Remove old client-side auth/account storage keys once.
+    localStorage.removeItem("smartspin_accounts_db");
+    localStorage.removeItem("smartspin_logged_in");
+    localStorage.removeItem("smartspin_user");
+    localStorage.removeItem("smartspin_user_email");
+
+    async function init() {
+      try {
+        const response = await fetch(`${API_BASE}/api/me`, {
+          credentials: "include"
+        });
+        const payload = await response.json();
+        if (payload.loggedIn && payload.account) {
+          renderLoggedIn(payload.account);
+          return;
+        }
+      } catch {}
+      renderAuthForms();
+    }
+
+    init();
+  </script>
+</body>
+</html>
