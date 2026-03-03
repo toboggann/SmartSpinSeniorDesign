@@ -1,5 +1,5 @@
 # Ignore SmartSpin SQL file (exact name, anywhere)
-SmartSpin.sql
+#SmartSpin.sql
 
 # Keep local server/private config out of public repos
 server.js
