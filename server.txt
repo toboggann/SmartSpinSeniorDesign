@@ -3,6 +3,8 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
+const multer = require("multer");
+const OpenAI = require("openai");
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -27,6 +29,39 @@ const baseDir = __dirname;
 const pagesDir = path.join(baseDir, "pages");
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+const upload = multer({ dest: path.join(baseDir, "uploads") });
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+const GPT5_MINI_PRICING = {
+  inputPer1M: 0.25,
+  outputPer1M: 2.0
+};
+
+let runningOpenAICost = 0;
+
+function estimateGpt5MiniCost(usage) {
+  const inputTokens = usage?.input_tokens || 0;
+  const outputTokens = usage?.output_tokens || 0;
+  const totalTokens = usage?.total_tokens || inputTokens + outputTokens;
+
+  const inputCost = (inputTokens / 1_000_000) * GPT5_MINI_PRICING.inputPer1M;
+  const outputCost = (outputTokens / 1_000_000) * GPT5_MINI_PRICING.outputPer1M;
+  const totalCost = inputCost + outputCost;
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    inputCost,
+    outputCost,
+    totalCost
+  };
+}
+
+
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
 app.use("/assets", express.static(path.join(baseDir, "assets")));
@@ -36,9 +71,7 @@ const dbPool = mysql.createPool({
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "SmartSpin",
-  waitForConnections: true,
-  connectionLimit: 10,
+  database: process.env.DB_NAME || "SmartSpin"
 });
 
 app.get("/style.css", (req, res) => {
@@ -54,8 +87,9 @@ app.get(/^\/(index|accounts|chat|image)\.html$/, (req, res) => {
   res.sendFile(path.join(pagesDir, `${page}.html`));
 });
 
-// Sessions are still in-memory for now (fine for local dev).
 const sessions = new Map();
+const accounts = new Map();
+let nextAccountId = 1;
 
 function parseCookies(header = "") {
   return header
@@ -83,129 +117,135 @@ function clearSessionCookie(res) {
   res.setHeader("Set-Cookie", "sid=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax");
 }
 
-function publicAccountRow(row) {
-  if (!row) return null;
+function publicAccount(a) {
+  if (!a) return null;
   return {
-    AccountID: row.AccountID,
-    Username: row.Username,
-    Email: row.Email,
-    CreatedAt: row.CreatedAt,
-    LastLogin: row.LastLogin,
-    IsActive: row.IsActive,
+    AccountID: a.AccountID,
+    Username: a.Username,
+    Email: a.Email,
+    CreatedAt: a.CreatedAt,
+    LastLogin: a.LastLogin,
+    IsActive: a.IsActive
   };
 }
 
 
-app.post("/api/signup", async (req, res) => {
+/*******
+ * 
+ *    API FOR CHAT GPT
+ * 
+ */
+
+app.post("/api/chat", async (req, res) => {
   try {
-    const username = String(req.body?.username || "").trim();
-    const email = String(req.body?.email || "").trim().toLowerCase();
-    const password = String(req.body?.password || "");
-
-    if (!username || !email || !password) {
-      return res.status(400).json({ ok: false, error: "username, email and password are required" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ ok: false, error: "password must be at least 6 characters" });
+    const message = String(req.body?.message || "").trim();
+    if (!message) {
+      return res.status(400).json({ ok: false, error: "Message is required" });
     }
 
-    // Check if email already exists
-    const [existing] = await dbPool.query(
-      "SELECT AccountID FROM Accounts WHERE Email = ? LIMIT 1",
-      [email]
-    );
-    if (existing.length) {
-      return res.status(409).json({ ok: false, error: "email already exists" });
-    }
+    const response = await openai.responses.create({
+      model: "gpt-5-mini",
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: message
+            }
+          ]
+        }
+      ]
+    });
 
-    // replace with bcrypt hashing.
-    const passwordHash = password;
-    const salt = "";
+    const usageInfo = estimateGpt5MiniCost(response.usage);
+    runningOpenAICost += usageInfo.totalCost;
 
-    const [result] = await dbPool.query(
-      `INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive)
-       VALUES (?, ?, ?, ?, 1)`,
-      [username, email, passwordHash, salt]
-    );
+    console.log("OpenAI usage:", {
+      model: "gpt-5-mini",
+      inputTokens: usageInfo.inputTokens,
+      outputTokens: usageInfo.outputTokens,
+      totalTokens: usageInfo.totalTokens,
+      inputCostUSD: usageInfo.inputCost.toFixed(6),
+      outputCostUSD: usageInfo.outputCost.toFixed(6),
+      totalCostUSD: usageInfo.totalCost.toFixed(6),
+      runningTotalUSD: runningOpenAICost.toFixed(6)
+    });
 
-    const newId = result.insertId;
-
-    const [rows] = await dbPool.query(
-      `SELECT AccountID, Username, Email, CreatedAt, LastLogin, IsActive
-       FROM Accounts
-       WHERE AccountID = ?
-       LIMIT 1`,
-      [newId]
-    );
-
-    const account = publicAccountRow(rows[0]);
-
-    // Create session
-    const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    sessions.set(sid, { accountId: newId, email, expiresAt: Date.now() + SESSION_TTL_MS });
-    setSessionCookie(res, sid);
-
-    return res.status(201).json({ ok: true, account });
-  } catch (err) {
-    console.error("Signup DB error:", err);
-    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+    return res.json({ ok: true, reply: response.output_text });
+  } catch (error) {
+    console.error("OpenAI chat error:", error);
+    return res.status(500).json({ ok: false, error: "Chat failed" });
   }
 });
 
-app.post("/api/login", async (req, res) => {
-  try {
-    const email = String(req.body?.email || "").trim().toLowerCase();
-    const password = String(req.body?.password || "");
 
-    if (!email || !password) {
-      return res.status(400).json({ ok: false, error: "email and password are required" });
-    }
+/***
+ * 
+ * SIGN UP API
+ * 
+ */
 
-    const [rows] = await dbPool.query(
-      `SELECT AccountID, Username, Email, PasswordHash, CreatedAt, LastLogin, IsActive
-       FROM Accounts
-       WHERE Email = ?
-       LIMIT 1`,
-      [email]
-    );
 
-    const row = rows[0];
-    if (!row) {
-      return res.status(404).json({ ok: false, error: "account not found" });
-    }
-    if (!row.IsActive) {
-      return res.status(403).json({ ok: false, error: "account disabled" });
-    }
-
-    // compare plaintext
-    if (row.PasswordHash !== password) {
-      return res.status(401).json({ ok: false, error: "invalid credentials" });
-    }
-
-    // Update last login
-    await dbPool.query("UPDATE Accounts SET LastLogin = CURRENT_TIMESTAMP WHERE AccountID = ?", [
-      row.AccountID,
-    ]);
-
-    // Create session
-    const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    sessions.set(sid, { accountId: row.AccountID, email, expiresAt: Date.now() + SESSION_TTL_MS });
-    setSessionCookie(res, sid);
-
-    // Fetch updated last login (optional; keep simple)
-    const [fresh] = await dbPool.query(
-      `SELECT AccountID, Username, Email, CreatedAt, LastLogin, IsActive
-       FROM Accounts
-       WHERE AccountID = ?
-       LIMIT 1`,
-      [row.AccountID]
-    );
-
-    return res.json({ ok: true, account: publicAccountRow(fresh[0]) });
-  } catch (err) {
-    console.error("Login DB error:", err);
-    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+app.post("/api/signup", (req, res) => {
+  const username = String(req.body?.username || "").trim();
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "");
+  if (!username || !email || !password) {
+    return res.status(400).json({ ok: false, error: "username, email and password are required" });
   }
+  if (password.length < 6) {
+    return res.status(400).json({ ok: false, error: "password must be at least 6 characters" });
+  }
+  if (accounts.has(email)) {
+    return res.status(409).json({ ok: false, error: "email already exists" });
+  }
+
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  const account = {
+    AccountID: nextAccountId++,
+    Username: username,
+    Email: email,
+    Password: password,
+    CreatedAt: now,
+    LastLogin: now,
+    IsActive: 1
+  };
+  accounts.set(email, account);
+
+  const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
+  setSessionCookie(res, sid);
+  return res.status(201).json({ ok: true, account: publicAccount(account) });
+});
+
+app.post("/api/login", (req, res) => {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "");
+  if (!email || !password) {
+    return res.status(400).json({ ok: false, error: "email and password are required" });
+  }
+  const account = accounts.get(email);
+  if (!account) {
+    return res.status(404).json({ ok: false, error: "account not found" });
+  }
+  if (account.Password !== password) {
+    return res.status(401).json({ ok: false, error: "invalid credentials" });
+  }
+  account.LastLogin = new Date().toISOString().slice(0, 19).replace("T", " ");
+  const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
+  setSessionCookie(res, sid);
+  return res.json({ ok: true, account: publicAccount(account) });
 });
 
 app.post("/api/logout", (req, res) => {
@@ -215,36 +255,18 @@ app.post("/api/logout", (req, res) => {
   return res.json({ ok: true });
 });
 
-app.get("/api/me", async (req, res) => {
-  try {
-    const sid = parseCookies(req.headers.cookie || "").sid;
-    if (!sid) return res.json({ ok: true, loggedIn: false });
-
-    const session = sessions.get(sid);
-    if (!session || session.expiresAt <= Date.now()) {
-      if (sid) sessions.delete(sid);
-      return res.json({ ok: true, loggedIn: false });
-    }
-
-    const [rows] = await dbPool.query(
-      `SELECT AccountID, Username, Email, CreatedAt, LastLogin, IsActive
-       FROM Accounts
-       WHERE Email = ?
-       LIMIT 1`,
-      [session.email]
-    );
-
-    const row = rows[0];
-    if (!row) return res.json({ ok: true, loggedIn: false });
-    if (!row.IsActive) return res.json({ ok: true, loggedIn: false });
-
-    return res.json({ ok: true, loggedIn: true, account: publicAccountRow(row) });
-  } catch (err) {
-    console.error("Me DB error:", err);
-    return res.status(500).json({ ok: false, error: "SERVER_ERROR" });
+app.get("/api/me", (req, res) => {
+  const sid = parseCookies(req.headers.cookie || "").sid;
+  if (!sid) return res.json({ ok: true, loggedIn: false });
+  const session = sessions.get(sid);
+  if (!session || session.expiresAt <= Date.now()) {
+    if (sid) sessions.delete(sid);
+    return res.json({ ok: true, loggedIn: false });
   }
+  const account = accounts.get(session.email);
+  if (!account) return res.json({ ok: true, loggedIn: false });
+  return res.json({ ok: true, loggedIn: true, account: publicAccount(account) });
 });
-
 
 app.get("/api/health", async (req, res) => {
   try {
@@ -254,6 +276,9 @@ app.get("/api/health", async (req, res) => {
     res.status(500).json({ ok: false, db: "error", error: err.code || "DB_ERROR" });
   }
 });
+
+
+
 
 app.listen(PORT, HOST, () => {
   console.log(`SmartSpin server running at http://${HOST}:${PORT}`);
