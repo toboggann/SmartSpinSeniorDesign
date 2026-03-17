@@ -177,8 +177,10 @@
           setMessage(payload.error || "Sign up failed.", "error");
           return;
         }
-
-        renderLoggedIn(payload.account);
+        console.log("signup successful, payload:", payload);
+        setMessage("Account created! Please log in.", "success");
+        switchTab("login", true);
+        document.getElementById("loginEmail").value = email;
       } catch {
         setMessage("Unable to reach server. Start server.js and use port 3000.", "error");
       }

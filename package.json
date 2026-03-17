@@ -17,6 +17,7 @@
   "bugs": {
     "url": "https://github.com/toboggann/SmarSpin-Senior-Design-Project/issues"
   },
+  "type": "module",
   "homepage": "https://github.com/toboggann/SmarSpin-Senior-Design-Project#readme",
   "dependencies": {
     "cors": "^2.8.6",
