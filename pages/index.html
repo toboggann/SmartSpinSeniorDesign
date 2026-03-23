@@ -17,13 +17,45 @@
       <li><a href="index.html" class="active" aria-current="page">Home</a></li>
       <li><a href="image.html">Image</a></li>
       <li><a href="chat.html">Chat</a></li>
-      <li><a href="accounts.html">Account</a></li>
+      <li><a href="accounts.html" id="navAccountLink">Account</a></li>
     </ul>
   </nav>
 
   <main class="container">
-    <h1>Welcome Home</h1>
-    <p>Use the navbar to move between pages. The selected page stays highlighted.</p>
+    <h1>Welcome to SmartSpin</h1>
+    <p>Your laundry assistant. Scan clothing tags, identify your appliances, and get personalized washing instructions.</p>
+    <div class="auth-actions" id="homeActions"></div>
   </main>
+
+  <script>
+    const API_BASE = (window.location.protocol === "file:" || window.location.port === "5500")
+      ? "http://127.0.0.1:3000"
+      : window.location.origin;
+
+    async function init() {
+      let user = null;
+      try {
+        const res = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
+        const payload = await res.json();
+        if (payload.loggedIn && payload.account) user = payload.account;
+      } catch {}
+
+      if (user) {
+        document.getElementById("navAccountLink").textContent = user.Username;
+      }
+
+      const actions = document.getElementById("homeActions");
+      if (user) {
+        actions.innerHTML = `
+          <a class="btn-primary" href="image.html">Scan a Tag</a>
+          <a class="btn-primary" href="chat.html">Ask a Question</a>
+        `;
+      } else {
+        actions.innerHTML = `<a class="btn-primary" href="accounts.html">Get Started</a>`;
+      }
+    }
+
+    init();
+  </script>
 </body>
 </html>

@@ -17,13 +17,85 @@
       <li><a href="index.html">Home</a></li>
       <li><a href="image.html" class="active" aria-current="page">Image</a></li>
       <li><a href="chat.html">Chat</a></li>
-      <li><a href="accounts.html">Account</a></li>
+      <li><a href="accounts.html" id="navAccountLink">Account</a></li>
     </ul>
   </nav>
 
-  <main class="container">
-    <h1>Image</h1>
-    <p>Use this page for image generation, uploads, or previews.</p>
-  </main>
+  <main class="container" id="imageRoot"></main>
+
+  <script>
+    const API_BASE = (window.location.protocol === "file:" || window.location.port === "5500")
+      ? "http://127.0.0.1:3000"
+      : window.location.origin;
+
+    const imageRoot = document.getElementById("imageRoot");
+
+    function renderImagePage(user) {
+      document.getElementById("navAccountLink").textContent = user.Username;
+
+      imageRoot.innerHTML = `
+        <h1>Scan a Tag or Appliance</h1>
+        <p>Upload a photo of a clothing care label or your washer/dryer to get instructions.</p>
+
+        <div class="scan-toggle">
+          <button id="tagBtn" type="button" class="auth-tab active">Clothing Tag</button>
+          <button id="applianceBtn" type="button" class="auth-tab">Appliance</button>
+        </div>
+
+        <section id="uploadSection">
+          <form id="uploadForm" class="auth-form">
+            <label for="imageUpload" id="uploadLabel">Upload clothing tag photo</label>
+            <input id="imageUpload" type="file" accept="image/*" required />
+            <button type="submit" class="btn-primary">Scan</button>
+          </form>
+        </section>
+
+        <div id="scanResult" class="scan-result" hidden></div>
+      `;
+
+      let scanType = "clothing_tag";
+
+      document.getElementById("tagBtn").addEventListener("click", () => {
+        scanType = "clothing_tag";
+        document.getElementById("tagBtn").classList.add("active");
+        document.getElementById("applianceBtn").classList.remove("active");
+        document.getElementById("uploadLabel").textContent = "Upload clothing tag photo";
+      });
+
+      document.getElementById("applianceBtn").addEventListener("click", () => {
+        scanType = "appliance";
+        document.getElementById("applianceBtn").classList.add("active");
+        document.getElementById("tagBtn").classList.remove("active");
+        document.getElementById("uploadLabel").textContent = "Upload washer/dryer photo";
+      });
+
+      document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const file = document.getElementById("imageUpload").files[0];
+        if (!file) return;
+
+        const resultDiv = document.getElementById("scanResult");
+        resultDiv.hidden = false;
+        resultDiv.textContent = "Scanning...";
+
+        // TODO: send image to /api/image with scanType and display AI response
+        resultDiv.textContent = "AI integration coming soon.";
+      });
+    }
+
+    async function init() {
+      try {
+        const res = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
+        const payload = await res.json();
+        if (payload.loggedIn && payload.account) {
+          renderImagePage(payload.account);
+          return;
+        }
+      } catch {}
+      window.location.href = "accounts.html";
+    }
+
+    init();
+  </script>
 </body>
 </html>

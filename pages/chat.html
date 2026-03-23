@@ -17,20 +17,23 @@
       <li><a href="index.html">Home</a></li>
       <li><a href="image.html">Image</a></li>
       <li><a href="chat.html" class="active" aria-current="page">Chat</a></li>
-      <li><a href="accounts.html">Account</a></li>
+      <li><a href="accounts.html" id="navAccountLink">Account</a></li>
     </ul>
   </nav>
 
   <main class="container" id="chatRoot"></main>
 
   <script>
-    const chatRoot = document.getElementById("chatRoot");
-    const API_BASE =
-      window.location.port === "5500"
-        ? "http://127.0.0.1:3000"
-        : window.location.origin;
+    const API_BASE = (window.location.protocol === "file:" || window.location.port === "5500")
+      ? "http://127.0.0.1:3000"
+      : window.location.origin;
 
-    function renderChat() {
+    const chatRoot = document.getElementById("chatRoot");
+
+    function renderChat(user) {
+      // Show username in navbar
+      document.getElementById("navAccountLink").textContent = user.Username;
+
       chatRoot.innerHTML = `
         <h1>Chat</h1>
         <section class="chat-shell">
@@ -39,7 +42,7 @@
             <input
               id="chatInput"
               type="text"
-              placeholder="Type a message..."
+              placeholder="Ask a laundry question..."
               aria-label="Chat message"
             />
             <button type="submit" class="btn-primary">Send</button>
@@ -65,21 +68,21 @@
         if (!message) return;
         addMessage(message, "user");
         chatInput.value = "";
+        // TODO: send to /api/chat and display AI response
       });
     }
 
     async function init() {
       try {
-        const response = await fetch(`${API_BASE}/api/me`, {
-          credentials: "include"
-        });
-        const payload = await response.json();
-        if (payload.loggedIn) {
-          renderChat();
+        const res = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
+        const payload = await res.json();
+        if (payload.loggedIn && payload.account) {
+          renderChat(payload.account);
           return;
         }
       } catch {}
-      chatRoot.innerHTML = `<h1>sorry you need to log in</h1>`;
+      // Not logged in — redirect to accounts
+      window.location.href = "accounts.html";
     }
 
     init();
