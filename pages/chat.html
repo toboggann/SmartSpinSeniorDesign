@@ -8,21 +8,33 @@
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
-  <nav class="navbar">
-    <a class="brand" href="index.html">
-      <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
-      <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="image.html">Image</a></li>
-      <li><a href="chat.html" class="active" aria-current="page">Chat</a></li>
-      <li><a href="accounts.html">Account</a></li>
-    </ul>
-  </nav>
+  <canvas id="particles"></canvas>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
 
-  <main class="container" id="chatRoot"></main>
+  <div class="site-shell">
+    <nav class="navbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
+        <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="image.html">Image</a></li>
+        <li><a href="chat.html" class="active" aria-current="page">Chat</a></li>
+        <li><a href="accounts.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </nav>
 
-  <script src="/Scripts/chat.js"></script>
+    <main class="container" id="chatRoot"></main>
+
+    <div class="footer-note">SmartSpin chat page</div>
+  </div>
+
+  <script src="../Scripts/background.js"></script>
+  <script src="../Scripts/chat.js"></script>
 </body>
 </html>

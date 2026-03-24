@@ -8,22 +8,89 @@
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
-  <nav class="navbar">
-    <a class="brand" href="index.html">
-      <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
-      <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html" class="active" aria-current="page">Home</a></li>
-      <li><a href="image.html">Image</a></li>
-      <li><a href="chat.html">Chat</a></li>
-      <li><a href="accounts.html">Account</a></li>
-    </ul>
-  </nav>
+  <canvas id="particles"></canvas>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
 
-  <main class="container">
-    <h1>Welcome Home</h1>
-    <p>Use the navbar to move between pages. The selected page stays highlighted.</p>
-  </main>
+  <div class="site-shell">
+    <nav class="navbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
+        <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="active" aria-current="page">Home</a></li>
+        <li><a href="image.html">Image</a></li>
+        <li><a href="chat.html">Chat</a></li>
+        <li><a href="accounts.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </nav>
+
+    <main class="container">
+      <section class="hero">
+        <div class="hero-main">
+          <div class="page-badge">Smart laundry, simplified</div>
+          <h1>Welcome to SmartSpin</h1>
+          <p class="lead">
+            SmartSpin helps users manage laundry tasks with a cleaner interface,
+            modern navigation, and room for chat, image features, and account tools.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn-primary" href="chat.html">Open Chat</a>
+            <a class="btn-secondary" href="accounts.html">Manage Account</a>
+          </div>
+        </div>
+
+        <aside class="hero-side">
+          <div class="quick-stats">
+            <div class="stat-box">
+              <strong>Modern UI</strong>
+              <span>Clean layout with animated background</span>
+            </div>
+            <div class="stat-box">
+              <strong>Reusable</strong>
+              <span>Same design across every page</span>
+            </div>
+            <div class="stat-box">
+              <strong>Expandable</strong>
+              <span>Easy to connect backend features later</span>
+            </div>
+            <div class="stat-box">
+              <strong>Student Project</strong>
+              <span>Simple enough to present and maintain</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <div class="section-spacer"></div>
+
+      <section class="feature-grid">
+        <article class="feature-card">
+          <h3>Chat Support</h3>
+          <p>Talk with the SmartSpin assistant for help, ideas, or future laundry-related features.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3>Image Tools</h3>
+          <p>Use the image page for uploads, previews, or future machine vision features.</p>
+        </article>
+
+        <article class="feature-card">
+          <h3>User Accounts</h3>
+          <p>Keep account creation and login flow organized in one clean area.</p>
+        </article>
+      </section>
+    </main>
+
+    <div class="footer-note">SmartSpin interface demo</div>
+  </div>
+
+  <script src="../Scripts/background.js"></script>
 </body>
 </html>
