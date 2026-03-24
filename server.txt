@@ -65,6 +65,7 @@ function estimateGpt5MiniCost(usage) {
 app.use(express.json());
 app.use(cors({ origin: true, credentials: true }));
 app.use("/assets", express.static(path.join(baseDir, "assets")));
+app.use("/Scripts", express.static(path.join(baseDir, "Scripts")));
 
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST || "127.0.0.1",
@@ -82,7 +83,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(pagesDir, "index.html"));
 });
 
-app.get(/^\/(index|accounts|chat|image)\.html$/, (req, res) => {
+app.get(/^\/(index|accounts|chat|about|image|contact)\.html$/, (req, res) => {
   const page = req.params[0];
   res.sendFile(path.join(pagesDir, `${page}.html`));
 });
