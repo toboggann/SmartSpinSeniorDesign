@@ -17,6 +17,7 @@ function renderChat() {
           aria-label="Chat message"
         />
         <button type="submit" class="btn-primary">Send</button>
+        <button type="image" class="btn-image">+</button>
       </form>
     </section>
   `;
