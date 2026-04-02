@@ -135,74 +135,55 @@ function publicAccount(a) {
  *    API FOR CHAT GPT
  * 
  */
+    app.post("/api/chat", async (req, res) => {
+      try {
+        const message = String(req.body?.message || "").trim();
+        const image = req.body?.image || null;
+        const imageType = req.body?.imageType || "image/jpeg";
 
-app.post("/api/chat", async (req, res) => {
-  try {
-    const message = String(req.body?.message || "").trim();
-    const image = req.body?.image || null;
-    const imageType = req.body?.imageType || "image/jpeg";
-    console.log("Received image:", image ? `yes (${Math.round(image.length / 1024)}kb base64)` : "no");
-
-    if (!message && !image) {
-      return res.status(400).json({ ok: false, error: "Message or image is required" });
-    }
-
-    // Build user content blocks
-    const userContent = [];
-    if (image) {
-      userContent.push({
-        type: "input_image",
-        image_url: {           // ← must be an object, not a string
-          url: `data:${imageType};base64,${image}`
+        if (!message && !image) {
+          return res.status(400).json({ ok: false, error: "Message or image is required" });
         }
-      });
-    }
-    if (message) {
-      userContent.push({
-        type: "input_text",
-        text: message
-      });
-    }
 
-    const response = await openai.responses.create({
-      model: "gpt-5-mini",
-      input: [
-        {
-          role: "system",
-          content: [
+        const userContent = [];
+
+        if (image) {
+          userContent.push({
+            type: "input_image",
+            image_url: `data:${imageType};base64,${image}`  // ← plain string, not an object
+          });
+        }
+
+        if (message) {
+          userContent.push({
+            type: "input_text",
+            text: message
+          });
+        }
+
+        const response = await openai.responses.create({
+          model: "gpt-4o-mini",  // ← correct model name
+          input: [
             {
-              type: "input_text",
-              text: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
+              role: "system",
+              content: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
+            },
+            {
+              role: "user",
+              content: userContent
             }
           ]
-        },
-        {
-          role: "user",
-          content: userContent
-        }
-      ]
+        });
+
+        const usageInfo = estimateGpt5MiniCost(response.usage);
+        runningOpenAICost += usageInfo.totalCost;
+
+        return res.json({ ok: true, reply: response.output_text });
+      } catch (error) {
+        console.error("OpenAI chat error:", error);
+        return res.status(500).json({ ok: false, error: "Chat failed" });
+      }
     });
-
-    const usageInfo = estimateGpt5MiniCost(response.usage);
-    runningOpenAICost += usageInfo.totalCost;
-
-    console.log("OpenAI usage:", {
-      model: "gpt-5-mini",
-      inputTokens: usageInfo.inputTokens,
-      outputTokens: usageInfo.outputTokens,
-      totalTokens: usageInfo.totalTokens,
-      inputCostUSD: usageInfo.inputCost.toFixed(6),
-      outputCostUSD: usageInfo.outputCost.toFixed(6),
-      totalCostUSD: usageInfo.totalCost.toFixed(6),
-      runningTotalUSD: runningOpenAICost.toFixed(6)
-    });
-
-    return res.json({ ok: true, reply: response.output_text });
-  } catch (error) {
-    console.error("OpenAI chat error:", error);
-    return res.status(500).json({ ok: false, error: "Chat failed" });
-  }
-});
 
 
 /***
