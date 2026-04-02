@@ -279,6 +279,8 @@ p {
   flex-wrap: wrap;
 }
 
+
+.btn-image,
 .btn-primary,
 .btn-secondary {
   border: 1px solid transparent;
@@ -294,6 +296,7 @@ p {
   transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
+.btn-image:hover,
 .btn-primary:hover,
 .btn-secondary:hover,
 .btn-primary:focus-visible,
@@ -301,7 +304,11 @@ p {
   transform: translateY(-1px);
   outline: none;
 }
-
+.btn-image{
+  background: linear-gradient(135deg, #1e7fcb, #46b6f2);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(18, 109, 177, 0.22);
+}
 .btn-primary {
   background: linear-gradient(135deg, #1e7fcb, #46b6f2);
   color: #fff;
@@ -559,4 +566,11 @@ p {
   .quick-stats {
     grid-template-columns: 1fr;
   }
+}
+
+.chat-input-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto; 
+  gap: 0.65rem;
+  align-items: center;
 }

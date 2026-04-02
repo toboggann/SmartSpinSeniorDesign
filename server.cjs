@@ -62,13 +62,13 @@ function estimateGpt5MiniCost(usage) {
 }
 
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(cors({ origin: true, credentials: true }));
 app.use("/assets", express.static(path.join(baseDir, "assets")));
 app.use("/Scripts", express.static(path.join(baseDir, "Scripts")));
 
 const dbPool = mysql.createPool({
-  host: process.env.DB_HOST || "127.0.0.1",
+  host: process.env.DB_HOST || "0.0.0.0",
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
@@ -77,10 +77,6 @@ const dbPool = mysql.createPool({
 
 app.get("/style.css", (req, res) => {
   res.sendFile(path.join(baseDir, "style.css"));
-});
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(pagesDir, "index.html"));
 });
 
 app.get(/^\/(index|accounts|chat|about|image|contact)\.html$/, (req, res) => {
@@ -140,8 +136,29 @@ function publicAccount(a) {
 app.post("/api/chat", async (req, res) => {
   try {
     const message = String(req.body?.message || "").trim();
-    if (!message) {
-      return res.status(400).json({ ok: false, error: "Message is required" });
+    const image = req.body?.image || null;
+    const imageType = req.body?.imageType || "image/jpeg";
+    console.log("Received image:", image ? `yes (${Math.round(image.length / 1024)}kb base64)` : "no");
+
+    if (!message && !image) {
+      return res.status(400).json({ ok: false, error: "Message or image is required" });
+    }
+
+    // Build user content blocks
+    const userContent = [];
+    if (image) {
+      userContent.push({
+        type: "input_image",
+        image_url: {           // ← must be an object, not a string
+          url: `data:${imageType};base64,${image}`
+        }
+      });
+    }
+    if (message) {
+      userContent.push({
+        type: "input_text",
+        text: message
+      });
     }
 
     const response = await openai.responses.create({
@@ -158,12 +175,7 @@ app.post("/api/chat", async (req, res) => {
         },
         {
           role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: message
-            }
-          ]
+          content: userContent
         }
       ]
     });
@@ -282,5 +294,5 @@ app.get("/api/health", async (req, res) => {
 
 
 app.listen(PORT, HOST, () => {
-  console.log(`SmartSpin server running at http://${HOST}:${PORT}`);
+  console.log(`SmartSpin server running at http://${HOST}:${PORT}/index.html`);
 });
