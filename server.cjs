@@ -65,6 +65,8 @@ app.use(express.json({ limit: "10mb" }));
 app.use(cors({ origin: true, credentials: true }));
 app.use("/assets", express.static(path.join(baseDir, "assets")));
 app.use("/Scripts", express.static(path.join(baseDir, "Scripts")));
+app.use(express.static(path.join(baseDir, "pages")));
+app.get("/", (req, res) => res.redirect("/index.html"));
 
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST || "0.0.0.0",
@@ -78,10 +80,12 @@ app.get("/style.css", (req, res) => {
   res.sendFile(path.join(baseDir, "style.css"));
 });
 
+/*
+
 app.get(/^\/(index|accounts|chat|about|image|contact)\.html$/, (req, res) => {
   const page = req.params[0];
   res.sendFile(path.join(pagesDir, `${page}.html`));
-});
+});*/
 
 const sessions = new Map();
 const accounts = new Map();
