@@ -61,7 +61,7 @@ function estimateGpt5MiniCost(usage) {
   };
 }
 
-
+app.use(express.json());
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({ origin: true, credentials: true }));
 app.use("/assets", express.static(path.join(baseDir, "assets")));
