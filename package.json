@@ -2,10 +2,10 @@
   "name": "smarspin-senior-design-project",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "server.cjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.cjs"
   },
   "repository": {
     "type": "git",
@@ -17,12 +17,13 @@
   "bugs": {
     "url": "https://github.com/toboggann/SmarSpin-Senior-Design-Project/issues"
   },
-  "type": "module",
+  "type": "commonjs",
   "homepage": "https://github.com/toboggann/SmarSpin-Senior-Design-Project#readme",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "fs": "^0.0.1-security",
     "multer": "^2.1.1",
     "mysql2": "^3.17.4",
     "openai": "^6.27.0"

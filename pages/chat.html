@@ -8,84 +8,33 @@
   <link rel="stylesheet" href="../style.css" />
 </head>
 <body>
-  <nav class="navbar">
-    <a class="brand" href="index.html">
-      <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
-      <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
-    </a>
-    <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="image.html">Image</a></li>
-      <li><a href="chat.html" class="active" aria-current="page">Chat</a></li>
-      <li><a href="accounts.html" id="navAccountLink">Account</a></li>
-    </ul>
-  </nav>
+  <canvas id="particles"></canvas>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
 
-  <main class="container" id="chatRoot"></main>
+  <div class="site-shell">
+    <nav class="navbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
+        <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="image.html">Image</a></li>
+        <li><a href="chat.html" class="active" aria-current="page">Chat</a></li>
+        <li><a href="accounts.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </nav>
 
-  <script>
-    const API_BASE = (window.location.protocol === "file:" || window.location.port === "5500")
-      ? "http://127.0.0.1:3000"
-      : window.location.origin;
+    <main class="container" id="chatRoot"></main> 
 
-    const chatRoot = document.getElementById("chatRoot");
+    <div class="footer-note">SmartSpin chat page</div>
+  </div>
 
-    function renderChat(user) {
-      // Show username in navbar
-      document.getElementById("navAccountLink").textContent = user.Username;
-
-      chatRoot.innerHTML = `
-        <h1>Chat</h1>
-        <section class="chat-shell">
-          <div class="chat-window" id="chatWindow"></div>
-          <form class="chat-input-row" id="chatForm">
-            <input
-              id="chatInput"
-              type="text"
-              placeholder="Ask a laundry question..."
-              aria-label="Chat message"
-            />
-            <button type="submit" class="btn-primary">Send</button>
-          </form>
-        </section>
-      `;
-
-      const chatForm = document.getElementById("chatForm");
-      const chatInput = document.getElementById("chatInput");
-      const chatWindow = document.getElementById("chatWindow");
-
-      function addMessage(text, role) {
-        const bubble = document.createElement("p");
-        bubble.className = `chat-bubble ${role}`;
-        bubble.textContent = text;
-        chatWindow.appendChild(bubble);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-      }
-
-      chatForm.addEventListener("submit", (event) => {
-        event.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message) return;
-        addMessage(message, "user");
-        chatInput.value = "";
-        // TODO: send to /api/chat and display AI response
-      });
-    }
-
-    async function init() {
-      try {
-        const res = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
-        const payload = await res.json();
-        if (payload.loggedIn && payload.account) {
-          renderChat(payload.account);
-          return;
-        }
-      } catch {}
-      // Not logged in — redirect to accounts
-      window.location.href = "accounts.html";
-    }
-
-    init();
-  </script>
+  <script src="../Scripts/background.js"></script>
+  <script src="../Scripts/chat.js"></script>
 </body>
 </html>

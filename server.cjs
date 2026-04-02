@@ -23,7 +23,7 @@ function loadEnvFile(filePath) {
 loadEnvFile(path.join(__dirname, ".env"));
 
 const app = express();
-const HOST = process.env.HOST || "127.0.0.1";
+const HOST = process.env.HOST || "0.0.0.0";
 const PORT = Number(process.env.PORT || 3000);
 const baseDir = __dirname;
 const pagesDir = path.join(baseDir, "pages");
@@ -61,14 +61,15 @@ function estimateGpt5MiniCost(usage) {
   };
 }
 
-
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(cors({ origin: true, credentials: true }));
 app.use("/assets", express.static(path.join(baseDir, "assets")));
 app.use("/Scripts", express.static(path.join(baseDir, "Scripts")));
+app.use(express.static(path.join(baseDir, "pages")));
+app.get("/", (req, res) => res.redirect("/index.html"));
 
 const dbPool = mysql.createPool({
-  host: process.env.DB_HOST || "127.0.0.1",
+  host: process.env.DB_HOST || "0.0.0.0",
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
@@ -79,14 +80,12 @@ app.get("/style.css", (req, res) => {
   res.sendFile(path.join(baseDir, "style.css"));
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(pagesDir, "index.html"));
-});
+/*
 
 app.get(/^\/(index|accounts|chat|about|image|contact)\.html$/, (req, res) => {
   const page = req.params[0];
   res.sendFile(path.join(pagesDir, `${page}.html`));
-});
+});*/
 
 const sessions = new Map();
 const accounts = new Map();
@@ -136,58 +135,55 @@ function publicAccount(a) {
  *    API FOR CHAT GPT
  * 
  */
+    app.post("/api/chat", async (req, res) => {
+      try {
+        const message = String(req.body?.message || "").trim();
+        const image = req.body?.image || null;
+        const imageType = req.body?.imageType || "image/jpeg";
 
-app.post("/api/chat", async (req, res) => {
-  try {
-    const message = String(req.body?.message || "").trim();
-    if (!message) {
-      return res.status(400).json({ ok: false, error: "Message is required" });
-    }
-
-    const response = await openai.responses.create({
-      model: "gpt-5-mini",
-      input: [
-        {
-          role: "system",
-          content: [
-            {
-              type: "input_text",
-              text: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
-            }
-          ]
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: message
-            }
-          ]
+        if (!message && !image) {
+          return res.status(400).json({ ok: false, error: "Message or image is required" });
         }
-      ]
+
+        const userContent = [];
+
+        if (image) {
+          userContent.push({
+            type: "input_image",
+            image_url: `data:${imageType};base64,${image}`  // ← plain string, not an object
+          });
+        }
+
+        if (message) {
+          userContent.push({
+            type: "input_text",
+            text: message
+          });
+        }
+
+        const response = await openai.responses.create({
+          model: "gpt-4o-mini",  // ← correct model name
+          input: [
+            {
+              role: "system",
+              content: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
+            },
+            {
+              role: "user",
+              content: userContent
+            }
+          ]
+        });
+
+        const usageInfo = estimateGpt5MiniCost(response.usage);
+        runningOpenAICost += usageInfo.totalCost;
+
+        return res.json({ ok: true, reply: response.output_text });
+      } catch (error) {
+        console.error("OpenAI chat error:", error);
+        return res.status(500).json({ ok: false, error: "Chat failed" });
+      }
     });
-
-    const usageInfo = estimateGpt5MiniCost(response.usage);
-    runningOpenAICost += usageInfo.totalCost;
-
-    console.log("OpenAI usage:", {
-      model: "gpt-5-mini",
-      inputTokens: usageInfo.inputTokens,
-      outputTokens: usageInfo.outputTokens,
-      totalTokens: usageInfo.totalTokens,
-      inputCostUSD: usageInfo.inputCost.toFixed(6),
-      outputCostUSD: usageInfo.outputCost.toFixed(6),
-      totalCostUSD: usageInfo.totalCost.toFixed(6),
-      runningTotalUSD: runningOpenAICost.toFixed(6)
-    });
-
-    return res.json({ ok: true, reply: response.output_text });
-  } catch (error) {
-    console.error("OpenAI chat error:", error);
-    return res.status(500).json({ ok: false, error: "Chat failed" });
-  }
-});
 
 
 /***
@@ -282,5 +278,5 @@ app.get("/api/health", async (req, res) => {
 
 
 app.listen(PORT, HOST, () => {
-  console.log(`SmartSpin server running at http://${HOST}:${PORT}`);
+  console.log(`SmartSpin server running at http://${HOST}:${PORT}/index.html`);
 });
