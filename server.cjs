@@ -229,13 +229,15 @@ app.post("/api/signup", async (req, res) => {
   */
   const connection = await dbPool.getConnection();
   try{
-    const [existing] = await connection.execute("CALL sp_get_account_by_email(?)",[email]);
-    if(existing[0].length>0){
+    const [existing] = await connection.execute("SELECT AccountID FROM Accounts WHERE Email = ?",[email]);
+    if(existing.length>0){
       return res.status(409).json({ok:false,error:"email already exists"});
     }
-    const [result] = await connection.execute("CALL sp_create_account(?,?,?,?,?)",[username,email,password,"nosalt",1]);
-    const account = result [0][0];
-    return res.status(201).json({ok: true,account});
+    const [result] = await connection.execute(
+  "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
+  [username, email, password, "nosalt"]
+);
+    return res.status(201).json({ok: true,accountId: result.insertId});
   }finally{
     connection.release();
   }
@@ -270,11 +272,11 @@ app.post("/api/login",async (req, res) => {
 });*/
       const connection = await dbPool.getConnection();
   try{
-    const [rows] = await connection.execute("CALL sp_get_account_by_email(?)",[email]);
-    if(rows[0].length===0){
+    const [rows] = await connection.execute("SELECT AccountID, Username, Email, PasswordHash FROM Accounts WHERE Email = ?",[email]);
+    if(rows.length===0){
       return res.status(404).json({ok:false,error:"account not found"});
     }
-const logAccount = rows[0][0];
+const logAccount = rows[0];
 
     if(logAccount.PasswordHash !== password){
       return res.status(401).json({ok:false,error:"incorrect password"});
