@@ -247,12 +247,14 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login",async (req, res) => {
+  try{
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
   if (!email || !password) {
     return res.status(400).json({ ok: false, error: "email and password are required" });
   }
+  /*
   const account = accounts.get(email);
   if (!account) {
     return res.status(404).json({ ok: false, error: "account not found" });
@@ -265,6 +267,28 @@ app.post("/api/login", (req, res) => {
   sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
   setSessionCookie(res, sid);
   return res.json({ ok: true, account: publicAccount(account) });
+});*/
+      const connection = await dbPool.getConnection();
+  try{
+    const [rows] = await connection.execute("CALL sp_get_account_by_email(?)",[email]);
+    if(rows[0].length===0){
+      return res.status(404).json({ok:false,error:"account not found"});
+    }
+const logAccount = rows[0][0];
+
+    if(logAccount.PasswordHash !== password){
+      return res.status(401).json({ok:false,error:"incorrect password"});
+    }
+    return res.status(201).json({ok: true,publicAccount(logAccount)});
+  }finally{
+    connection.release();
+  }
+
+  }catch(err){
+    return res.status(500).json({ok:false,error:err.message});
+  }
+
+
 });
 
 app.post("/api/logout", (req, res) => {
