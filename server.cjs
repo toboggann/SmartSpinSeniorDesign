@@ -69,11 +69,11 @@ app.use(express.static(path.join(baseDir, "pages")));
 app.get("/", (req, res) => res.redirect("/index.html"));
 
 const dbPool = mysql.createPool({
-  host: process.env.DB_HOST || "0.0.0.0",
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "smartadmin",
-  password: process.env.DB_PASSWORD || "admin",
-  database: process.env.DB_NAME || "SmartSpin"
+  host: process.env.MYSQLHOST || "127.0.0.1",
+  port: Number(process.env.MYSQLPORT || 3306),
+  user: process.env.MYSQLUSER || "smartadmin",
+  password: process.env.MYSQLPASSWORD || "admin",
+  database: process.env.MYSQLDATABASE || "SmartSpin"
 });
 
 app.get("/style.css", (req, res) => {
