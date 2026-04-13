@@ -279,7 +279,7 @@ const logAccount = rows[0][0];
     if(logAccount.PasswordHash !== password){
       return res.status(401).json({ok:false,error:"incorrect password"});
     }
-    return res.status(201).json({ok: true,publicAccount(logAccount)});
+    return res.json({ok: true, account:publicAccount(logAccount) });
   }finally{
     connection.release();
   }
@@ -297,7 +297,7 @@ app.post("/api/logout", (req, res) => {
   clearSessionCookie(res);
   return res.json({ ok: true });
 });
-
+/*
 app.get("/api/me", (req, res) => {
   const sid = parseCookies(req.headers.cookie || "").sid;
   if (!sid) return res.json({ ok: true, loggedIn: false });
@@ -309,7 +309,7 @@ app.get("/api/me", (req, res) => {
   const account = accounts.get(session.email);
   if (!account) return res.json({ ok: true, loggedIn: false });
   return res.json({ ok: true, loggedIn: true, account: publicAccount(account) });
-});
+});*/
 
 app.get("/api/health", async (req, res) => {
   try {
