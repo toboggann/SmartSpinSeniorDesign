@@ -4,7 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
 const multer = require("multer");
-const OpenAI = require("openai");
+//const OpenAI = require("openai");
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -30,10 +30,10 @@ const pagesDir = path.join(baseDir, "pages");
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const upload = multer({ dest: path.join(baseDir, "uploads") });
-
+/*
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
-});
+});*/
 
 const GPT5_MINI_PRICING = {
   inputPer1M: 0.25,
@@ -71,8 +71,8 @@ app.get("/", (req, res) => res.redirect("/index.html"));
 const dbPool = mysql.createPool({
   host: process.env.DB_HOST || "0.0.0.0",
   port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
+  user: process.env.DB_USER || "smartadmin",
+  password: process.env.DB_PASSWORD || "admin",
   database: process.env.DB_NAME || "SmartSpin"
 });
 
@@ -134,7 +134,7 @@ function publicAccount(a) {
  * 
  *    API FOR CHAT GPT
  * 
- */
+ 
     app.post("/api/chat", async (req, res) => {
       try {
         const message = String(req.body?.message || "").trim();
@@ -183,7 +183,7 @@ function publicAccount(a) {
         console.error("OpenAI chat error:", error);
         return res.status(500).json({ ok: false, error: "Chat failed" });
       }
-    });
+    });*/
 
 
 /***
@@ -210,6 +210,7 @@ app.post("/api/signup", async (req, res) => {
     return res.status(409).json({ ok: false, error: "email already exists" });
   }*/
   
+  /*
   const now = new Date().toISOString().slice(0, 19).replace("T", " ");
   const account = {
     AccountID: nextAccountId++,
@@ -225,7 +226,7 @@ app.post("/api/signup", async (req, res) => {
   const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
   sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
   setSessionCookie(res, sid);
-
+  */
   const connection = await dbPool.getConnection();
   try{
     const [existing] = await connection.execute("CALL sp_get_account_by_email(?)",[email]);
@@ -239,7 +240,6 @@ app.post("/api/signup", async (req, res) => {
     connection.release();
   }
 
-  return res.status(201).json({ ok: true, account: publicAccount(account) });
   
   }catch(err){
     console.error("signup error:", err);
