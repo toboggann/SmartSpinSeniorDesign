@@ -193,7 +193,9 @@ function publicAccount(a) {
  */
 
 
-app.post("/api/signup", (req, res) => {
+app.post("/api/signup", async (req, res) => {
+  try{ 
+    
   const username = String(req.body?.username || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
@@ -203,10 +205,11 @@ app.post("/api/signup", (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ ok: false, error: "password must be at least 6 characters" });
   }
+  /*
   if (accounts.has(email)) {
     return res.status(409).json({ ok: false, error: "email already exists" });
-  }
-
+  }*/
+  
   const now = new Date().toISOString().slice(0, 19).replace("T", " ");
   const account = {
     AccountID: nextAccountId++,
@@ -222,7 +225,26 @@ app.post("/api/signup", (req, res) => {
   const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
   sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
   setSessionCookie(res, sid);
+
+  const connection = await dbPool.getConnection();
+  try{
+    const [existing] = await connection.execute("CALL sp_get_account_by_email(?)",[email]);
+    if(existing[0].length>0){
+      return res.status(409).json({ok:false,error:"email already exists"});
+    }
+    const [result] = await connection.execute("CALL sp_create_account(?,?,?,?,?)",[username,email,password,"nosalt",1]);
+    const account = result [0][0];
+    return res.status(201).json({ok: true,account});
+  }finally{
+    connection.release();
+  }
+
   return res.status(201).json({ ok: true, account: publicAccount(account) });
+  
+  }catch(err){
+    console.error("signup error:", err);
+    return res.status(500).json({ ok:false,error:err.message});
+  }
 });
 
 app.post("/api/login", (req, res) => {
