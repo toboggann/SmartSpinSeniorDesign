@@ -4,7 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
 const multer = require("multer");
-const OpenAI = require("openai");
+//const OpenAI = require("openai");
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -30,10 +30,10 @@ const pagesDir = path.join(baseDir, "pages");
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const upload = multer({ dest: path.join(baseDir, "uploads") });
-
+/*
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
-});
+});*/
 
 const GPT5_MINI_PRICING = {
   inputPer1M: 0.25,
@@ -69,11 +69,11 @@ app.use(express.static(path.join(baseDir, "pages")));
 app.get("/", (req, res) => res.redirect("/index.html"));
 
 const dbPool = mysql.createPool({
-  host: process.env.DB_HOST || "0.0.0.0",
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "SmartSpin"
+  host: process.env.MYSQLHOST || "127.0.0.1",
+  port: Number(process.env.MYSQLPORT || 3306),
+  user: process.env.MYSQLUSER || "smartadmin",
+  password: process.env.MYSQLPASSWORD || "admin",
+  database: process.env.MYSQLDATABASE || "SmartSpin"
 });
 
 app.get("/style.css", (req, res) => {
@@ -134,7 +134,7 @@ function publicAccount(a) {
  * 
  *    API FOR CHAT GPT
  * 
- */
+ 
     app.post("/api/chat", async (req, res) => {
       try {
         const message = String(req.body?.message || "").trim();
@@ -183,7 +183,7 @@ function publicAccount(a) {
         console.error("OpenAI chat error:", error);
         return res.status(500).json({ ok: false, error: "Chat failed" });
       }
-    });
+    });*/
 
 
 /***
@@ -193,7 +193,9 @@ function publicAccount(a) {
  */
 
 
-app.post("/api/signup", (req, res) => {
+app.post("/api/signup", async (req, res) => {
+  try{ 
+    
   const username = String(req.body?.username || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
@@ -203,10 +205,12 @@ app.post("/api/signup", (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ ok: false, error: "password must be at least 6 characters" });
   }
+  /*
   if (accounts.has(email)) {
     return res.status(409).json({ ok: false, error: "email already exists" });
-  }
-
+  }*/
+  
+  /*
   const now = new Date().toISOString().slice(0, 19).replace("T", " ");
   const account = {
     AccountID: nextAccountId++,
@@ -222,15 +226,37 @@ app.post("/api/signup", (req, res) => {
   const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
   sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
   setSessionCookie(res, sid);
-  return res.status(201).json({ ok: true, account: publicAccount(account) });
+  */
+  const connection = await dbPool.getConnection();
+  try{
+    const [existing] = await connection.execute("SELECT AccountID FROM Accounts WHERE Email = ?",[email]);
+    if(existing.length>0){
+      return res.status(409).json({ok:false,error:"email already exists"});
+    }
+    const [result] = await connection.execute(
+  "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
+  [username, email, password, "nosalt"]
+);
+    return res.status(201).json({ok: true,accountId: result.insertId});
+  }finally{
+    connection.release();
+  }
+
+  
+  }catch(err){
+    console.error("signup error:", err);
+    return res.status(500).json({ ok:false,error:err.message});
+  }
 });
 
-app.post("/api/login", (req, res) => {
+app.post("/api/login",async (req, res) => {
+  try{
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
   if (!email || !password) {
     return res.status(400).json({ ok: false, error: "email and password are required" });
   }
+  /*
   const account = accounts.get(email);
   if (!account) {
     return res.status(404).json({ ok: false, error: "account not found" });
@@ -243,6 +269,28 @@ app.post("/api/login", (req, res) => {
   sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
   setSessionCookie(res, sid);
   return res.json({ ok: true, account: publicAccount(account) });
+});*/
+      const connection = await dbPool.getConnection();
+  try{
+    const [rows] = await connection.execute("SELECT AccountID, Username, Email, PasswordHash FROM Accounts WHERE Email = ?",[email]);
+    if(rows.length===0){
+      return res.status(404).json({ok:false,error:"account not found"});
+    }
+const logAccount = rows[0];
+
+    if(logAccount.PasswordHash !== password){
+      return res.status(401).json({ok:false,error:"incorrect password"});
+    }
+    return res.json({ok: true, account:publicAccount(logAccount) });
+  }finally{
+    connection.release();
+  }
+
+  }catch(err){
+    return res.status(500).json({ok:false,error:err.message});
+  }
+
+
 });
 
 app.post("/api/logout", (req, res) => {
@@ -251,7 +299,7 @@ app.post("/api/logout", (req, res) => {
   clearSessionCookie(res);
   return res.json({ ok: true });
 });
-
+/*
 app.get("/api/me", (req, res) => {
   const sid = parseCookies(req.headers.cookie || "").sid;
   if (!sid) return res.json({ ok: true, loggedIn: false });
@@ -263,7 +311,7 @@ app.get("/api/me", (req, res) => {
   const account = accounts.get(session.email);
   if (!account) return res.json({ ok: true, loggedIn: false });
   return res.json({ ok: true, loggedIn: true, account: publicAccount(account) });
-});
+});*/
 
 app.get("/api/health", async (req, res) => {
   try {
