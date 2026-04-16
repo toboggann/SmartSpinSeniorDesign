@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartSpin | Calendar</title>
+  <link rel="icon" type="image/png" href="../assets/logo_notext.png" />
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ---------- Calendar page styles ---------- */
+    .cal-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cal-header h1 {
+      margin: 0;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .cal-nav button {
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(120, 170, 220, 0.35);
+      color: #2a4a7f;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      padding: 0.5rem 0.9rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .cal-nav button:hover {
+      background: rgba(255,255,255,0.9);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(100, 150, 210, 0.2);
+    }
+
+    .cal-title {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #1e3a6b;
+      min-width: 180px;
+      text-align: center;
+    }
+
+    /* Grid */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      background: rgba(255,255,255,0.45);
+      padding: 1rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.6);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 28px rgba(100, 150, 210, 0.15);
+    }
+
+    .cal-weekday {
+      text-align: center;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #5a7aa8;
+      padding: 0.4rem 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .cal-day {
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(200, 220, 240, 0.5);
+      border-radius: 12px;
+      padding: 0.4rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cal-day:hover:not(.cal-empty) {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 6px 16px rgba(100, 150, 210, 0.25);
+      border-color: rgba(120, 170, 220, 0.6);
+    }
+
+    .cal-day.cal-empty {
+      background: transparent;
+      border: 1px dashed rgba(200, 220, 240, 0.35);
+      cursor: default;
+    }
+
+    .cal-day.cal-today {
+      border: 2px solid #4a90e2;
+      background: rgba(230, 242, 255, 0.9);
+    }
+
+    .cal-day.cal-has-loads {
+      background: linear-gradient(135deg, rgba(210, 235, 255, 0.9), rgba(240, 230, 255, 0.9));
+    }
+
+    .cal-day-num {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #2a4a7f;
+    }
+
+    .cal-today .cal-day-num {
+      color: #1a5fc4;
+    }
+
+    .cal-load-chip {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 6px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    .cal-load-more {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #5a7aa8;
+      padding-left: 2px;
+    }
+
+    /* Load type colors */
+    .load-whites     { background: #6aa9d6; }
+    .load-darks      { background: #4a5a7a; }
+    .load-colors     { background: #d68fb4; }
+    .load-delicates  { background: #b794d6; }
+    .load-towels     { background: #e0a670; }
+    .load-bedding    { background: #7ac2b0; }
+    .load-workout    { background: #8ec36f; }
+    .load-custom     { background: #a8a8a8; }
+
+    /* Legend */
+    .cal-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(255,255,255,0.5);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #2a4a7f;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+    }
+
+    /* Modal */
+    .cal-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 58, 107, 0.35);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 1rem;
+    }
+
+    .cal-modal-backdrop.open { display: flex; }
+
+    .cal-modal {
+      background: rgba(255,255,255,0.98);
+      border-radius: 20px;
+      padding: 1.75rem;
+      max-width: 500px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(30, 58, 107, 0.3);
+      animation: modalPop 0.25s ease-out;
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.94); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .cal-modal h2 {
+      margin: 0 0 0.25rem;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      color: #1e3a6b;
+    }
+
+    .cal-modal .modal-date {
+      font-family: 'Quicksand', sans-serif;
+      color: #5a7aa8;
+      font-size: 0.9rem;
+      margin: 0 0 1.25rem;
+    }
+
+    .load-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .load-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      background: rgba(240, 247, 255, 0.7);
+      border-radius: 10px;
+      border: 1px solid rgba(200, 220, 240, 0.6);
+    }
+
+    .load-item .load-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .load-item .load-name {
+      flex: 1;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      color: #2a4a7f;
+      font-size: 0.95rem;
+    }
+
+    .load-item .load-notes {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.8rem;
+      color: #5a7aa8;
+      font-style: italic;
+    }
+
+    .load-item .load-delete {
+      background: transparent;
+      border: none;
+      color: #c06060;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 0.3rem;
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .load-item .load-delete:hover { background: rgba(200, 80, 80, 0.12); }
+
+    .load-empty {
+      text-align: center;
+      color: #7a8ba8;
+      font-family: 'Quicksand', sans-serif;
+      font-style: italic;
+      padding: 1rem;
+    }
+
+    .add-load-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(200, 220, 240, 0.6);
+    }
+
+    .add-load-form label {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #2a4a7f;
+    }
+
+    .add-load-form select,
+    .add-load-form input {
+      font-family: 'Quicksand', sans-serif;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid rgba(180, 200, 230, 0.6);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #1e3a6b;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .add-load-form select:focus,
+    .add-load-form input:focus {
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.8rem;
+    }
+
+    .btn-add {
+      flex: 1;
+      background: linear-gradient(135deg, #4a90e2, #6aa9d6);
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-add:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(74, 144, 226, 0.4);
+    }
+
+    .btn-close {
+      background: rgba(200, 220, 240, 0.4);
+      color: #2a4a7f;
+      border: none;
+      padding: 0.65rem 1rem;
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .btn-close:hover { background: rgba(200, 220, 240, 0.7); }
+
+    /* Mobile */
+    @media (max-width: 600px) {
+      .cal-day { padding: 0.25rem; }
+      .cal-day-num { font-size: 0.8rem; }
+      .cal-load-chip { font-size: 0.6rem; padding: 1px 4px; }
+      .cal-weekday { font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+  <div class="bg-orb orb-4"></div>
+  <div class="bg-orb orb-5"></div>
+
+  <div class="site-shell">
+    <nav class="navbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="../assets/smartspin_logo.png" alt="SmartSpin logo" />
+        <span class="brand-word"><span class="brand-smart">Smart</span><span class="brand-spin">Spin</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="image.html">Image</a></li>
+        <li><a href="chat.html">Chat</a></li>
+        <li><a href="calendar.html" class="active" aria-current="page">Calendar</a></li>
+        <li><a href="accounts.html">Account</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
+      </ul>
+    </nav>
+
+    <main class="cal-container">
+      <div class="cal-header">
+        <h1>Laundry Calendar</h1>
+        <div class="cal-nav">
+          <button id="prevMonth" aria-label="Previous month">‹</button>
+          <span id="calTitle" class="cal-title">Month Year</span>
+          <button id="nextMonth" aria-label="Next month">›</button>
+          <button id="todayBtn">Today</button>
+        </div>
+      </div>
+
+      <p style="font-family:'Quicksand',sans-serif; color:#5a7aa8; margin-top:0;">
+        Click any day to plan loads — pick a type, add notes, and keep your week organized.
+      </p>
+
+      <div id="calGrid" class="cal-grid"></div>
+
+      <div class="cal-legend" id="calLegend"></div>
+    </main>
+
+    <!-- Modal -->
+    <div class="cal-modal-backdrop" id="modalBackdrop">
+      <div class="cal-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <h2 id="modalTitle">Plan Laundry</h2>
+        <p class="modal-date" id="modalDate"></p>
+
+        <div class="load-list" id="loadList"></div>
+
+        <form class="add-load-form" id="addLoadForm">
+          <label for="loadType">Load type</label>
+          <select id="loadType" required></select>
+
+          <label for="loadLabel">Custom label (optional)</label>
+          <input id="loadLabel" type="text" maxlength="40" placeholder="e.g. Work shirts, kids' clothes…" />
+
+          <label for="loadNotes">Notes (optional)</label>
+          <input id="loadNotes" type="text" maxlength="80" placeholder="e.g. cold wash, delicate cycle…" />
+
+          <div class="modal-actions">
+            <button type="submit" class="btn-add">Add load</button>
+            <button type="button" class="btn-close" id="closeModal">Close</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-wave">
+        <svg viewBox="0 0 1080 90" preserveAspectRatio="none">
+          <path class="wave-back" d="M0,38 C180,68 360,8 540,38 C720,68 900,8 1080,38 L1080,90 L0,90 Z"/>
+          <path class="wave-mid"  d="M0,58 C200,32 400,74 600,50 C800,24 1000,64 1080,54 L1080,90 L0,90 Z"/>
+          <path class="wave-foam" d="M0,68 C160,54 320,78 480,62 C640,48 800,72 960,60 C1000,56 1040,62 1080,64 L1080,72 L0,72 Z"/>
+        </svg>
+      </div>
+      <div class="footer-bar">SmartSpin · Laundry made smart</div>
+    </footer>
+  </div>
+
+  <script src="../Scripts/background.js"></script>
+  <script src="../Scripts/buttonwave.js"></script>
+
+  <script>
+    // ---------- Config ----------
+    const STORAGE_KEY = "smartspin_calendar_loads";
+    const LOAD_TYPES = [
+      { id: "whites",    name: "Whites",     cls: "load-whites",    color: "#6aa9d6" },
+      { id: "darks",     name: "Darks",      cls: "load-darks",     color: "#4a5a7a" },
+      { id: "colors",    name: "Colors",     cls: "load-colors",    color: "#d68fb4" },
+      { id: "delicates", name: "Delicates",  cls: "load-delicates", color: "#b794d6" },
+      { id: "towels",    name: "Towels",     cls: "load-towels",    color: "#e0a670" },
+      { id: "bedding",   name: "Bedding",    cls: "load-bedding",   color: "#7ac2b0" },
+      { id: "workout",   name: "Workout",    cls: "load-workout",   color: "#8ec36f" },
+      { id: "custom",    name: "Other",      cls: "load-custom",    color: "#a8a8a8" },
+    ];
+
+    // ---------- State ----------
+    let currentDate = new Date();
+    currentDate.setDate(1);
+    let selectedDateKey = null;
+
+    // ---------- Storage ----------
+    function loadData() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveData(data) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function dateKey(year, month, day) {
+      return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    // ---------- Rendering ----------
+    function renderLegend() {
+      const legend = document.getElementById("calLegend");
+      legend.innerHTML = LOAD_TYPES.map(t =>
+        `<span class="legend-item"><span class="legend-dot" style="background:${t.color}"></span>${t.name}</span>`
+      ).join("");
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calGrid");
+      const title = document.getElementById("calTitle");
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const monthNames = ["January","February","March","April","May","June",
+                          "July","August","September","October","November","December"];
+      title.textContent = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const data = loadData();
+      const today = new Date();
+      const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+      const weekdays = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      let html = weekdays.map(w => `<div class="cal-weekday">${w}</div>`).join("");
+
+      // Leading empty cells
+      for (let i = 0; i < firstDay; i++) {
+        html += `<div class="cal-day cal-empty"></div>`;
+      }
+
+      // Day cells
+      for (let d = 1; d <= daysInMonth; d++) {
+        const key = dateKey(year, month, d);
+        const loads = data[key] || [];
+        const isToday = key === todayKey;
+        const hasLoads = loads.length > 0;
+
+        const classes = [
+          "cal-day",
+          isToday ? "cal-today" : "",
+          hasLoads ? "cal-has-loads" : ""
+        ].filter(Boolean).join(" ");
+
+        const chipsHtml = loads.slice(0, 2).map(l => {
+          const type = LOAD_TYPES.find(t => t.id === l.typeId) || LOAD_TYPES[LOAD_TYPES.length - 1];
+          const label = l.label || type.name;
+          return `<span class="cal-load-chip ${type.cls}" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`;
+        }).join("");
+
+        const moreHtml = loads.length > 2
+          ? `<span class="cal-load-more">+${loads.length - 2} more</span>`
+          : "";
+
+        html += `
+          <div class="${classes}" data-date="${key}" role="button" tabindex="0">
+            <div class="cal-day-num">${d}</div>
+            ${chipsHtml}
+            ${moreHtml}
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+
+      // Attach handlers
+      grid.querySelectorAll(".cal-day:not(.cal-empty)").forEach(el => {
+        el.addEventListener("click", () => openModal(el.dataset.date));
+        el.addEventListener("keydown", e => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openModal(el.dataset.date);
+          }
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+      }[c]));
+    }
+
+    // ---------- Modal ----------
+    function openModal(key) {
+      selectedDateKey = key;
+      const backdrop = document.getElementById("modalBackdrop");
+      const modalDate = document.getElementById("modalDate");
+      const [y, m, d] = key.split("-").map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      modalDate.textContent = dateObj.toLocaleDateString(undefined, {
+        weekday: "long", year: "numeric", month: "long", day: "numeric"
+      });
+
+      // Populate load type dropdown
+      const sel = document.getElementById("loadType");
+      sel.innerHTML = LOAD_TYPES.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
+
+      renderLoadList();
+      backdrop.classList.add("open");
+      document.getElementById("loadLabel").value = "";
+      document.getElementById("loadNotes").value = "";
+    }
+
+    function closeModal() {
+      document.getElementById("modalBackdrop").classList.remove("open");
+      selectedDateKey = null;
+    }
+
+    function renderLoadList() {
+      const list = document.getElementById("loadList");
+      const data = loadData();
+      const loads = data[selectedDateKey] || [];
+
+      if (loads.length === 0) {
+        list.innerHTML = `<div class="load-empty">No loads planned yet. Add one below.</div>`;
+        return;
+      }
+
+      list.innerHTML = loads.map((l, i) => {
+        const type = LOAD_TYPES.find(t => t.id === l.typeId) || LOAD_TYPES[LOAD_TYPES.length - 1];
+        const label = l.label || type.name;
+        const notes = l.notes ? `<span class="load-notes">${escapeHtml(l.notes)}</span>` : "";
+        return `
+          <div class="load-item">
+            <span class="load-swatch" style="background:${type.color}"></span>
+            <span class="load-name">${escapeHtml(label)}</span>
+            ${notes}
+            <button class="load-delete" data-idx="${i}" aria-label="Delete load">×</button>
+          </div>
+        `;
+      }).join("");
+
+      list.querySelectorAll(".load-delete").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.idx);
+          const data = loadData();
+          data[selectedDateKey].splice(idx, 1);
+          if (data[selectedDateKey].length === 0) delete data[selectedDateKey];
+          saveData(data);
+          renderLoadList();
+          renderCalendar();
+        });
+      });
+    }
+
+    function addLoad(e) {
+      e.preventDefault();
+      const typeId = document.getElementById("loadType").value;
+      const label = document.getElementById("loadLabel").value.trim();
+      const notes = document.getElementById("loadNotes").value.trim();
+
+      const data = loadData();
+      if (!data[selectedDateKey]) data[selectedDateKey] = [];
+      data[selectedDateKey].push({ typeId, label, notes });
+      saveData(data);
+
+      document.getElementById("loadLabel").value = "";
+      document.getElementById("loadNotes").value = "";
+      renderLoadList();
+      renderCalendar();
+    }
+
+    // ---------- Wire up ----------
+    document.getElementById("prevMonth").addEventListener("click", () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+    document.getElementById("nextMonth").addEventListener("click", () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+    document.getElementById("todayBtn").addEventListener("click", () => {
+      currentDate = new Date();
+      currentDate.setDate(1);
+      renderCalendar();
+    });
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+    document.getElementById("modalBackdrop").addEventListener("click", e => {
+      if (e.target.id === "modalBackdrop") closeModal();
+    });
+    document.getElementById("addLoadForm").addEventListener("submit", addLoad);
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeModal();
+    });
+
+    renderLegend();
+    renderCalendar();
+  </script>
+</body>
+</html>
