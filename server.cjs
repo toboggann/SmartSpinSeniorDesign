@@ -81,12 +81,7 @@ app.get("/style.css", (req, res) => {
   res.sendFile(path.join(baseDir, "style.css"));
 });
 
-/*
 
-app.get(/^\/(index|accounts|chat|about|image|contact)\.html$/, (req, res) => {
-  const page = req.params[0];
-  res.sendFile(path.join(pagesDir, `${page}.html`));
-});*/
 
 const sessions = new Map();
 const accounts = new Map();
