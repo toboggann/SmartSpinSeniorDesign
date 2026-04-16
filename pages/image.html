@@ -6,12 +6,17 @@
   <title>SmartSpin | Image</title>
   <link rel="icon" type="image/png" href="../assets/logo_notext.png" />
   <link rel="stylesheet" href="../style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <canvas id="particles"></canvas>
   <div class="bg-orb orb-1"></div>
   <div class="bg-orb orb-2"></div>
   <div class="bg-orb orb-3"></div>
+  <div class="bg-orb orb-4"></div>
+  <div class="bg-orb orb-5"></div>
 
   <div class="site-shell">
     <nav class="navbar">
@@ -50,9 +55,18 @@
       </section>
     </main>
 
-    <div class="footer-note">SmartSpin image page</div>
+    <footer class="site-footer">
+  <div class="footer-wave">
+    <svg viewBox="0 0 1080 90" preserveAspectRatio="none">
+      <path class="wave-back" d="M0,38 C180,68 360,8 540,38 C720,68 900,8 1080,38 L1080,90 L0,90 Z"/>
+      <path class="wave-mid"  d="M0,58 C200,32 400,74 600,50 C800,24 1000,64 1080,54 L1080,90 L0,90 Z"/>
+      <path class="wave-foam" d="M0,68 C160,54 320,78 480,62 C640,48 800,72 960,60 C1000,56 1040,62 1080,64 L1080,72 L0,72 Z"/>
+    </svg>
   </div>
+  <div class="footer-bar">SmartSpin · Laundry made smart</div>
+</footer>
 
   <script src="../Scripts/background.js"></script>
+  <script src="../Scripts/buttonwave.js"></script>
 </body>
 </html>

@@ -43,6 +43,9 @@ if (canvas) {
 
       ctx.fillStyle = gradient;
       ctx.fill();
+      ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 1.8})`;
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
 
       ctx.beginPath();
       ctx.arc(
@@ -76,13 +79,29 @@ if (canvas) {
       this.size = size;
       this.speed = speed;
       this.alpha = alpha;
+      this.shimmer = Math.random() * Math.PI * 2;
     }
 
     draw() {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+      ctx.fillStyle = 'rgba(220, 242, 255, 0.08)';
       ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+
+      const shimmerX = this.x - this.size * 0.3 + Math.sin(Date.now() * 0.001 + this.shimmer) * 0.8;
+      const shimmerY = this.y - this.size * 0.3;
+      ctx.beginPath();
+      ctx.arc(shimmerX, shimmerY, this.size * 0.28, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fill();
+
+      ctx.restore();
     }
 
     update() {
