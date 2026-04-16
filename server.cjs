@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql2/promise");
 const multer = require("multer");
+const bcrypt = require("bcrypt");
 //const OpenAI = require("openai");
 
 function loadEnvFile(filePath) {
@@ -233,10 +234,11 @@ app.post("/api/signup", async (req, res) => {
     if(existing.length>0){
       return res.status(409).json({ok:false,error:"email already exists"});
     }
+    const hash = await bcrypt.hash(password, 10);
     const [result] = await connection.execute(
-  "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
-  [username, email, password, "nosalt"]
-);
+      "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
+      [username, email, hash, "nosalt"]
+    );
     return res.status(201).json({ok: true,accountId: result.insertId});
   }finally{
     connection.release();
@@ -278,8 +280,9 @@ app.post("/api/login",async (req, res) => {
     }
 const logAccount = rows[0];
 
-    if(logAccount.PasswordHash !== password){
-      return res.status(401).json({ok:false,error:"incorrect password"});
+    const match = await bcrypt.compare(password, logAccount.PasswordHash);
+    if (!match) {
+      return res.status(401).json({ ok: false, error: "incorrect password" });
     }
     return res.json({ok: true, account:publicAccount(logAccount) });
   }finally{
