@@ -235,6 +235,9 @@ app.post("/api/signup", async (req, res) => {
       "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
       [username, email, hash, "nosalt"]
     );
+    const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
+    setSessionCookie(res, sid);
     return res.status(201).json({ok: true,accountId: result.insertId});
   }finally{
     connection.release();
@@ -302,7 +305,7 @@ app.post("/api/logout", (req, res) => {
   return res.json({ ok: true });
 });
 
-app.get("/api/me", (req, res) => {
+app.get("/api/me", async (req, res) => {
   const sid = parseCookies(req.headers.cookie || "").sid;
   if (!sid) return res.json({ ok: true, loggedIn: false });
 
@@ -313,7 +316,18 @@ app.get("/api/me", (req, res) => {
     return res.json({ ok: true, loggedIn: false });
   }
 
-  return res.json({ ok: true, loggedIn: true, email: session.email });
+  //Fetch account data for the accoutns page
+  const connection = await dbPool.getConnection();
+  try {
+    const [rows] = await connection.execute(
+      "SELECT AccountID, Username, Email, CreatedAt, LastLogin, IsActive FROM Accounts WHERE Email = ?",
+      [session.email]
+    );
+    if (rows.length === 0) return res.json({ ok: true, loggedIn: false });
+    return res.json({ ok: true, loggedIn: true, account: rows[0] });
+  } finally {
+    connection.release();
+  }
 });
 
 app.get("/api/health", async (req, res) => {
