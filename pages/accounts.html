@@ -45,7 +45,10 @@
 
     // Navbar 
     function updateNavbar(user) {
-      if (user) document.getElementById("navAccountLink").textContent = user.Username;
+      //if (user) document.getElementById("navAccountLink").textContent = user.Username;
+      const el = document.getElementById("navAccountLink");
+      if(!el) return;
+      el.textContent = user.Username;
     }
 
     // Message helpers 
