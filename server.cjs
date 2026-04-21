@@ -229,6 +229,7 @@ app.post("/api/signup", async (req, res) => {
     if(existing.length>0){
       return res.status(409).json({ok:false,error:"email already exists"});
     }
+
     const hash = await bcrypt.hash(password, 10);
     const [result] = await connection.execute(
       "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
@@ -269,7 +270,7 @@ app.post("/api/login",async (req, res) => {
 });*/
       const connection = await dbPool.getConnection();
   try{
-    const [rows] = await connection.execute("SELECT AccountID, Username, Email, PasswordHash FROM Accounts WHERE Email = ?",[email]);
+    const [rows] = await connection.execute("SELECT AccountID, Username, Email, PasswordHash, CreatedAt, LastLogin, IsActive FROM Accounts WHERE Email = ?",[email]);
     if(rows.length===0){
       return res.status(404).json({ok:false,error:"account not found"});
     }
@@ -279,6 +280,9 @@ const logAccount = rows[0];
     if (!match) {
       return res.status(401).json({ ok: false, error: "incorrect password" });
     }
+    const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
+    setSessionCookie(res, sid);
     return res.json({ok: true, account:publicAccount(logAccount) });
   }finally{
     connection.release();
@@ -297,19 +301,20 @@ app.post("/api/logout", (req, res) => {
   clearSessionCookie(res);
   return res.json({ ok: true });
 });
-/*
+
 app.get("/api/me", (req, res) => {
   const sid = parseCookies(req.headers.cookie || "").sid;
   if (!sid) return res.json({ ok: true, loggedIn: false });
+
   const session = sessions.get(sid);
   if (!session || session.expiresAt <= Date.now()) {
     if (sid) sessions.delete(sid);
+    clearSessionCookie(res);
     return res.json({ ok: true, loggedIn: false });
   }
-  const account = accounts.get(session.email);
-  if (!account) return res.json({ ok: true, loggedIn: false });
-  return res.json({ ok: true, loggedIn: true, account: publicAccount(account) });
-});*/
+
+  return res.json({ ok: true, loggedIn: true, email: session.email });
+});
 
 app.get("/api/health", async (req, res) => {
   try {

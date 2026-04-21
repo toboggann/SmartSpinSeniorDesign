@@ -50,5 +50,12 @@
   <script src="../Scripts/background.js"></script>
   <script src="../Scripts/buttonwave.js"></script>
   <script src="../Scripts/chat.js"></script>
+  <script>
+  fetch('/api/me', { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.loggedIn) window.location.href = '/login.html';
+    });
+  </script>
 </body>
 </html>
