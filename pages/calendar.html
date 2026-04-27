@@ -98,11 +98,6 @@
   <script src="../Scripts/buttonwave.js"></script>
   <script src="../Scripts/calendar.js"></script>
   <script>
-  fetch('/api/me', { credentials: 'include' })
-  .then(r => r.json())
-  .then(data => {
-    if (!data.loggedIn) window.location.href = '/index.html';
-  });
   </script>
 </body>
 </html>
