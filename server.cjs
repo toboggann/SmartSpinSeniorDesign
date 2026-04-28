@@ -125,6 +125,27 @@ function publicAccount(a) {
   };
 }
 
+async function getLoggedInAccountId(req) {
+  const sid = parseCookies(req.headers.cookie || "").sid;
+  if (!sid) return null;
+  const session = sessions.get(sid);
+  if (!session || session.expiresAt <= Date.now()) {
+    if (sid) sessions.delete(sid);
+    return null;
+  }
+  // Look up AccountID from email
+  const connection = await dbPool.getConnection();
+  try {
+    const [rows] = await connection.execute(
+      "SELECT AccountID FROM Accounts WHERE Email = ?",
+      [session.email]
+    );
+    return rows.length > 0 ? rows[0].AccountID : null;
+  } finally {
+    connection.release();
+  }
+}
+
 
 /*******
  * 
@@ -339,7 +360,105 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+// GET all calendar loads for the logged-in user
+app.get("/api/calendar", async (req, res) => {
+  try {
+    const accountId = await getLoggedInAccountId(req);
+    if (!accountId) {
+      return res.status(401).json({ ok: false, error: "not logged in" });
+    }
+    const connection = await dbPool.getConnection();
+    try {
+      const [rows] = await connection.execute(
+        "SELECT LoadID, LoadDate, TypeID, Label, Notes FROM LaundryLoads WHERE AccountID = ? ORDER BY LoadDate",
+        [accountId]
+      );
+      // Group by date to match the frontend's existing shape
+      const grouped = {};
+      for (const r of rows) {
+        const date = r.LoadDate instanceof Date
+          ? r.LoadDate.toISOString().slice(0, 10)
+          : String(r.LoadDate).slice(0, 10);
+        if (!grouped[date]) grouped[date] = [];
+        grouped[date].push({
+          id: r.LoadID,
+          typeId: r.TypeID,
+          label: r.Label || "",
+          notes: r.Notes || ""
+        });
+      }
+      return res.json({ ok: true, data: grouped });
+    } finally {
+      connection.release();
+    }
+  } catch (err) {
+    console.error("calendar GET error:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
+// POST a new calendar load
+app.post("/api/calendar", async (req, res) => {
+  try {
+    const accountId = await getLoggedInAccountId(req);
+    if (!accountId) {
+      return res.status(401).json({ ok: false, error: "not logged in" });
+    }
+    const date = String(req.body?.date || "").trim();
+    const typeId = String(req.body?.typeId || "").trim();
+    const label = String(req.body?.label || "").trim();
+    const notes = String(req.body?.notes || "").trim();
+
+    if (!date || !typeId) {
+      return res.status(400).json({ ok: false, error: "date and typeId are required" });
+    }
+
+    const connection = await dbPool.getConnection();
+    try {
+      const [result] = await connection.execute(
+        "INSERT INTO LaundryLoads (AccountID, LoadDate, TypeID, Label, Notes) VALUES (?, ?, ?, ?, ?)",
+        [accountId, date, typeId, label || null, notes || null]
+      );
+      return res.json({ ok: true, id: result.insertId });
+    } finally {
+      connection.release();
+    }
+  } catch (err) {
+    console.error("calendar POST error:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// DELETE a calendar load (verifies ownership)
+app.delete("/api/calendar/:id", async (req, res) => {
+  try {
+    const accountId = await getLoggedInAccountId(req);
+    if (!accountId) {
+      return res.status(401).json({ ok: false, error: "not logged in" });
+    }
+    const loadId = Number(req.params.id);
+    if (!loadId) {
+      return res.status(400).json({ ok: false, error: "invalid id" });
+    }
+
+    const connection = await dbPool.getConnection();
+    try {
+      const [result] = await connection.execute(
+        "DELETE FROM LaundryLoads WHERE LoadID = ? AND AccountID = ?",
+        [loadId, accountId]
+      );
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ ok: false, error: "load not found" });
+      }
+      return res.json({ ok: true });
+    } finally {
+      connection.release();
+    }
+  } catch (err) {
+    console.error("calendar DELETE error:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 
 app.listen(PORT, HOST, () => {
