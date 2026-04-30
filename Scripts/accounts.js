@@ -93,7 +93,6 @@
         });
         const payload = await response.json();
 
-
         if (!response.ok) {
           if (response.status === 404) {
             setMessage("No account found for this email. Please sign up.", "error");
@@ -129,9 +128,8 @@
           credentials: "include",
           body: JSON.stringify({ username, email, password })
         });
-
         const payload = await response.json();
-     
+
         if (!response.ok) {
           if (response.status === 409 && payload.error?.includes("email")) {
             setMessage("Email already exists. Please log in.", "error");
@@ -148,10 +146,8 @@
         setMessage("Unable to reach server. Start server.js and use port 3000.", "error");
       }
     }
+
     function renderLoggedIn(account) {
-      document.getElementById("acctUser").textContent = account.Username || "User";
-      document.getElementById("acctEmail").textContent = account.Email || "";
-      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
       accountRoot.innerHTML = `
         <h1>Account</h1>
         <p>You are logged in as <strong id="acctUser"></strong>.</p>
@@ -163,7 +159,9 @@
         </div>
       `;
 
-
+      document.getElementById("acctUser").textContent = account.Username || "User";
+      document.getElementById("acctEmail").textContent = account.Email || "";
+      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
 
       document.getElementById("logoutBtn").addEventListener("click", async () => {
         try {
