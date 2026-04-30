@@ -1,14 +1,27 @@
     function setMessage(text, type = "error") {
       const msg = document.getElementById("authMessage");
+
+      if (!msg) {
+        console.error("Missing #authMessage element:", text);
+        alert(text);
+        return;
+      }
+
       msg.textContent = text;
       msg.className = `auth-message ${type}`;
     }
 
     function clearMessage() {
       const msg = document.getElementById("authMessage");
+
+      if (!msg) {
+        return;
+      }
+
       msg.textContent = "";
       msg.className = "auth-message";
     }
+
 
     function switchTab(tabName, keepMessage = false) {
       const loginSection = document.getElementById("loginSection");
@@ -128,7 +141,16 @@
           credentials: "include",
           body: JSON.stringify({ username, email, password })
         });
-        const payload = await response.json();
+        const contentType = response.headers.get("content-type") || "";
+
+        let payload;
+
+        if (contentType.includes("application/json")) {
+          payload = await response.json();
+        } else {
+          const text = await response.text();
+          payload = { error: text || "Server error." };
+        }
 
         if (!response.ok) {
           if (response.status === 409 && payload.error?.includes("email")) {
@@ -148,7 +170,7 @@
     }
 
     function renderLoggedIn(account) {
-      print(account)
+      console.log(account);
       accountRoot.innerHTML = `
         <h1>Account</h1>
         <p>You are logged in as <strong id="acctUser"></strong>.</p>
