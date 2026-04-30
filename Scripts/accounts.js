@@ -92,9 +92,7 @@
           body: JSON.stringify({ email, password })
         });
         const payload = await response.json();
-        console.log(payload);
-        console.log('------')
-        console.log(response);
+
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -131,8 +129,16 @@
           credentials: "include",
           body: JSON.stringify({ username, email, password })
         });
-        const payload = await response.json();
 
+        const payload = await response.json();
+     
+        console.log(payload);
+        console.log('------');
+        console.log(response);
+        console.log('------');
+        const payload1 =  response.json();
+        console.log(payload1);
+        console.log('------')  ; 
         if (!response.ok) {
           if (response.status === 409 && payload.error?.includes("email")) {
             setMessage("Email already exists. Please log in.", "error");

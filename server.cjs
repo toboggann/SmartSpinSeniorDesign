@@ -149,62 +149,6 @@ async function getLoggedInAccountId(req) {
 }
 
 
-/*******
- * 
- *    API FOR CHAT GPT
- * 
- 
-    app.post("/api/chat", async (req, res) => {
-      try {
-        const message = String(req.body?.message || "").trim();
-        const image = req.body?.image || null;
-        const imageType = req.body?.imageType || "image/jpeg";
-
-        if (!message && !image) {
-          return res.status(400).json({ ok: false, error: "Message or image is required" });
-        }
-
-        const userContent = [];
-
-        if (image) {
-          userContent.push({
-            type: "input_image",
-            image_url: `data:${imageType};base64,${image}`  // ← plain string, not an object
-          });
-        }
-
-        if (message) {
-          userContent.push({
-            type: "input_text",
-            text: message
-          });
-        }
-
-        const response = await openai.responses.create({
-          model: "gpt-4o-mini",  // ← correct model name
-          input: [
-            {
-              role: "system",
-              content: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
-            },
-            {
-              role: "user",
-              content: userContent
-            }
-          ]
-        });
-
-        const usageInfo = estimateGpt5MiniCost(response.usage);
-        runningOpenAICost += usageInfo.totalCost;
-
-        return res.json({ ok: true, reply: response.output_text });
-      } catch (error) {
-        console.error("OpenAI chat error:", error);
-        return res.status(500).json({ ok: false, error: "Chat failed" });
-      }
-    });*/
-
-
 /***
  * 
  * SIGN UP API
@@ -218,6 +162,9 @@ app.post("/api/signup", async (req, res) => {
   const username = String(req.body?.username || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
+  console.log(username + " " + email + " " + password); 
+  console.log("+++++");
+
   if (!username || !email || !password) {
     return res.status(400).json({ ok: false, error: "username, email and password are required" });
   }
@@ -240,6 +187,7 @@ app.post("/api/signup", async (req, res) => {
     sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
     setSessionCookie(res, sid);
     return res.status(201).json({ok: true,accountId: result.insertId});
+    
   }finally{
     connection.release();
   }
