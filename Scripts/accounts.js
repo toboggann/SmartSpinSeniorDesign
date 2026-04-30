@@ -1,8 +1,3 @@
-    const API_BASE =
-      window.location.port === "5500"
-        ? "http://127.0.0.1:3000"
-        : window.location.origin;
-
     function setMessage(text, type = "error") {
       const msg = document.getElementById("authMessage");
       msg.textContent = text;
