@@ -1,4 +1,3 @@
-    const accountRoot = document.getElementById("accountRoot");
     const API_BASE =
       window.location.port === "5500"
         ? "http://127.0.0.1:3000"
