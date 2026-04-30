@@ -92,6 +92,9 @@
           body: JSON.stringify({ email, password })
         });
         const payload = await response.json();
+        console.log(payload);
+        console.log('------')
+        console.log(response);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -148,7 +151,7 @@
     }
 
     function renderLoggedIn(account) {
-      print(account);
+      console.log(account);
       accountRoot.innerHTML = `
         <h1>Account</h1>
         <p>You are logged in as <strong id="acctUser"></strong>.</p>
