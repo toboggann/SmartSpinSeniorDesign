@@ -5,8 +5,7 @@ const cors = require("cors");
 const mysql = require("mysql2/promise");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
-import OpenAI from "openai";
-import express from "express";
+const OpenAI = require("openai");
 
 
 
