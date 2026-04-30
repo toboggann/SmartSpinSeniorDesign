@@ -210,125 +210,46 @@ async function getLoggedInAccountId(req) {
  * SIGN UP API
  * 
  */
+
+
 app.post("/api/signup", async (req, res) => {
-  let connection;
-
-  try {
-    const username = String(req.body?.username || "").trim();
-    const email = String(req.body?.email || "").trim().toLowerCase();
-    const password = String(req.body?.password || "");
-
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        ok: false,
-        error: "Username, email, and password are required."
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        ok: false,
-        error: "Password must be at least 6 characters."
-      });
-    }
-
-    connection = await dbPool.getConnection();
-
-    const [existing] = await connection.execute(
-      "SELECT AccountID FROM Accounts WHERE Email = ?",
-      [email]
-    );
-
-    if (existing.length > 0) {
-      return res.status(409).json({
-        ok: false,
-        error: "email already exists"
-      });
+  try{ 
+    
+  const username = String(req.body?.username || "").trim();
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  const password = String(req.body?.password || "");
+  if (!username || !email || !password) {
+    return res.status(400).json({ ok: false, error: "username, email and password are required" });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ ok: false, error: "password must be at least 6 characters" });
+  }
+  const connection = await dbPool.getConnection();
+  try{
+    const [existing] = await connection.execute("SELECT AccountID FROM Accounts WHERE Email = ?",[email]);
+    if(existing.length>0){
+      return res.status(409).json({ok:false,error:"email already exists"});
     }
 
     const hash = await bcrypt.hash(password, 10);
-
     const [result] = await connection.execute(
-      "INSERT INTO Accounts (Username, Email, PasswordHash, IsActive) VALUES (?, ?, ?, 1)",
-      [username, email, hash]
+      "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
+      [username, email, hash, "nosalt"]
     );
-
     const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-    sessions.set(sid, {
-      email,
-      expiresAt: Date.now() + SESSION_TTL_MS
-    });
-
+    sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
     setSessionCookie(res, sid);
-
-    return res.status(201).json({
-      ok: true,
-      account: {
-        AccountID: result.insertId,
-        Username: username,
-        Email: email,
-        CreatedAt: new Date().toISOString()
-      }
-    });
-  } catch (err) {
-    console.error("signup error:", {
-      message: err.message,
-      code: err.code,
-      errno: err.errno,
-      sqlMessage: err.sqlMessage,
-      sql: err.sql
-    });
-
-    return res.status(500).json({
-      ok: false,
-      error: err.sqlMessage || err.message || "Signup failed"
-    });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
+    return res.status(201).json({ok: true,accountId: result.insertId});
+  }finally{
+    connection.release();
   }
-});
-
-// app.post("/api/signup", async (req, res) => {
-//   try{ 
-    
-//   const username = String(req.body?.username || "").trim();
-//   const email = String(req.body?.email || "").trim().toLowerCase();
-//   const password = String(req.body?.password || "");
-//   if (!username || !email || !password) {
-//     return res.status(400).json({ ok: false, error: "username, email and password are required" });
-//   }
-//   if (password.length < 6) {
-//     return res.status(400).json({ ok: false, error: "password must be at least 6 characters" });
-//   }
-//   const connection = await dbPool.getConnection();
-//   try{
-//     const [existing] = await connection.execute("SELECT AccountID FROM Accounts WHERE Email = ?",[email]);
-//     if(existing.length>0){
-//       return res.status(409).json({ok:false,error:"email already exists"});
-//     }
-
-//     const hash = await bcrypt.hash(password, 10);
-//     const [result] = await connection.execute(
-//       "INSERT INTO Accounts (Username, Email, PasswordHash, Salt, IsActive) VALUES (?, ?, ?, ?, 1)",
-//       [username, email, hash, "nosalt"]
-//     );
-//     const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
-//     sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
-//     setSessionCookie(res, sid);
-//     return res.status(201).json({ok: true,accountId: result.insertId});
-//   }finally{
-//     connection.release();
-//   }
 
   
-//   }catch(err){
-//     console.error("signup error:", err);
-//     return res.status(500).json({ ok:false,error:err.message});
-//   }
-// });
+  }catch(err){
+    console.error("signup error:", err);
+    return res.status(500).json({ ok:false,error:err.message});
+  }
+});
 
 app.post("/api/login",async (req, res) => {
   try{
