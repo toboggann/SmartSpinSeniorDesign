@@ -162,8 +162,7 @@ app.post("/api/signup", async (req, res) => {
   const username = String(req.body?.username || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
   const password = String(req.body?.password || "");
-  console.log(username + " " + email + " " + password); 
-  console.log("+++++");
+
 
   if (!username || !email || !password) {
     return res.status(400).json({ ok: false, error: "username, email and password are required" });

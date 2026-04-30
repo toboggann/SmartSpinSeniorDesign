@@ -132,13 +132,6 @@
 
         const payload = await response.json();
      
-        console.log(payload);
-        console.log('------');
-        console.log(response);
-        console.log('------');
-        const payload1 =  response.json();
-        console.log(payload1);
-        console.log('------')  ; 
         if (!response.ok) {
           if (response.status === 409 && payload.error?.includes("email")) {
             setMessage("Email already exists. Please log in.", "error");
@@ -155,9 +148,10 @@
         setMessage("Unable to reach server. Start server.js and use port 3000.", "error");
       }
     }
-
     function renderLoggedIn(account) {
-      console.log(account);
+      document.getElementById("acctUser").textContent = account.Username || "User";
+      document.getElementById("acctEmail").textContent = account.Email || "";
+      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
       accountRoot.innerHTML = `
         <h1>Account</h1>
         <p>You are logged in as <strong id="acctUser"></strong>.</p>
@@ -169,9 +163,7 @@
         </div>
       `;
 
-      document.getElementById("acctUser").textContent = account.Username || "User";
-      document.getElementById("acctEmail").textContent = account.Email || "";
-      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
+
 
       document.getElementById("logoutBtn").addEventListener("click", async () => {
         try {
