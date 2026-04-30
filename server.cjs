@@ -5,7 +5,10 @@ const cors = require("cors");
 const mysql = require("mysql2/promise");
 const multer = require("multer");
 const bcrypt = require("bcrypt");
-//const OpenAI = require("openai");
+import OpenAI from "openai";
+import express from "express";
+
+
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -31,10 +34,10 @@ const pagesDir = path.join(baseDir, "pages");
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const upload = multer({ dest: path.join(baseDir, "uploads") });
-/*
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
-});*/
+});
 
 const GPT5_MINI_PRICING = {
   inputPer1M: 0.25,
@@ -511,6 +514,8 @@ app.post("/api/chat", async (req, res) => {
     return res.status(500).json({ ok: false, error: "Chat failed" });
   }
 });
+
+
 app.listen(PORT, HOST, () => {
   console.log(`SmartSpin server running at http://${HOST}:${PORT}/index.html`);
 });
