@@ -185,7 +185,7 @@ app.post("/api/signup", async (req, res) => {
     const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
     setSessionCookie(res, sid);
-    return res.status(201).json({ok: true,accountId: result.insertId});
+    return res.status(201).json({ok: true,accountId: result.insertId, u: username, e: email, p: password, d: Date.now()});
     
   }finally{
     connection.release();
@@ -249,8 +249,8 @@ const logAccount = rows[0];
 app.post("/api/logout", (req, res) => {
   const sid = parseCookies(req.headers.cookie || "").sid;
   if (sid) sessions.delete(sid);
-  clearSessionCookie(res);
-  return res.json({ ok: true });
+  clearSessionCookie(res);  
+  return res.json({ ok: true, credentials: "include"});
 });
 
 app.get("/api/me", async (req, res) => {
