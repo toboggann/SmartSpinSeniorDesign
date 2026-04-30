@@ -1,27 +1,14 @@
     function setMessage(text, type = "error") {
       const msg = document.getElementById("authMessage");
-
-      if (!msg) {
-        console.error("Missing #authMessage element:", text);
-        alert(text);
-        return;
-      }
-
       msg.textContent = text;
       msg.className = `auth-message ${type}`;
     }
 
     function clearMessage() {
       const msg = document.getElementById("authMessage");
-
-      if (!msg) {
-        return;
-      }
-
       msg.textContent = "";
       msg.className = "auth-message";
     }
-
 
     function switchTab(tabName, keepMessage = false) {
       const loginSection = document.getElementById("loginSection");
