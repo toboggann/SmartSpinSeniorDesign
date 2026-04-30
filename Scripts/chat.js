@@ -159,7 +159,9 @@ async function init() {
     const response = await fetch(`${API_BASE}/api/me`, { credentials: "include" });
     const payload = await response.json();
     if (payload.loggedIn) {
+      console.log("error before");
       renderChat();
+      console.log("error after");
       return;
     }
   } catch (error) {
