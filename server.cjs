@@ -460,7 +460,57 @@ app.delete("/api/calendar/:id", async (req, res) => {
   }
 });
 
+app.post("/api/chat", async (req, res) => {
+  try {
+    const message = String(req.body?.message || "").trim();
+    if (!message) {
+      return res.status(400).json({ ok: false, error: "Message is required" });
+    }
 
+    const response = await openai.responses.create({
+      model: "gpt-5-mini",
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
+            }
+          ]
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: message
+            }
+          ]
+        }
+      ]
+    });
+
+    const usageInfo = estimateGpt5MiniCost(response.usage);
+    runningOpenAICost += usageInfo.totalCost;
+
+    console.log("OpenAI usage:", {
+      model: "gpt-5-mini",
+      inputTokens: usageInfo.inputTokens,
+      outputTokens: usageInfo.outputTokens,
+      totalTokens: usageInfo.totalTokens,
+      inputCostUSD: usageInfo.inputCost.toFixed(6),
+      outputCostUSD: usageInfo.outputCost.toFixed(6),
+      totalCostUSD: usageInfo.totalCost.toFixed(6),
+      runningTotalUSD: runningOpenAICost.toFixed(6)
+    });
+
+    return res.json({ ok: true, reply: response.output_text });
+  } catch (error) {
+    console.error("OpenAI chat error:", error);
+    return res.status(500).json({ ok: false, error: "Chat failed" });
+  }
+});
 app.listen(PORT, HOST, () => {
   console.log(`SmartSpin server running at http://${HOST}:${PORT}/index.html`);
 });
