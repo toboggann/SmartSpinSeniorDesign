@@ -185,7 +185,8 @@ app.post("/api/signup", async (req, res) => {
     const sid = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
     sessions.set(sid, { email, expiresAt: Date.now() + SESSION_TTL_MS });
     setSessionCookie(res, sid);
-    return res.status(201).json({ok: true,accountId: result.insertId, u: username, e: email, p: password, d: Date.now()});
+    const now = new Date();
+    return res.status(201).json({ok: true,accountId: result.insertId, u: username, e: email, p: password, d: now.toLocaleString()});
     
   }finally{
     connection.release();

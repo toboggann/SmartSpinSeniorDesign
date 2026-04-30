@@ -141,7 +141,7 @@
           return;
         }
 
-        renderLoggedIn(payload.account);
+        renderLoggedIn(payload);
       } catch {
         setMessage("Unable to reach server. Start server.js and use port 3000.", "error");
       }
@@ -159,9 +159,9 @@
         </div>
       `;
 
-      document.getElementById("acctUser").textContent = account.Username || "User";
-      document.getElementById("acctEmail").textContent = account.Email || "";
-      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
+      document.getElementById("acctUser").textContent = account.u || "User";
+      document.getElementById("acctEmail").textContent = account.e || "";
+      document.getElementById("acctCreated").textContent = account.d || "";
 
       document.getElementById("logoutBtn").addEventListener("click", async () => {
         try {
