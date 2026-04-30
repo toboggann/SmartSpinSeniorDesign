@@ -129,7 +129,6 @@
           body: JSON.stringify({ username, email, password })
         });
         const payload = await response.json();
-        console.log(payload);
         if (!response.ok) {
           if (response.status === 409 && payload.error?.includes("email")) {
             setMessage("Email already exists. Please log in.", "error");
@@ -159,9 +158,9 @@
         </div>
       `;
 
-      document.getElementById("acctUser").textContent = account.u || "User";
-      document.getElementById("acctEmail").textContent = account.e || "";
-      document.getElementById("acctCreated").textContent = account.d || "";
+      document.getElementById("acctUser").textContent = account.Username || "User";
+      document.getElementById("acctEmail").textContent = account.Email || "";
+      document.getElementById("acctCreated").textContent = account.CreatedAt || "";
 
       document.getElementById("logoutBtn").addEventListener("click", async () => {
         try {
