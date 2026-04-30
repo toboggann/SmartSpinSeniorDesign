@@ -148,6 +148,7 @@
     }
 
     function renderLoggedIn(account) {
+      print(account)
       accountRoot.innerHTML = `
         <h1>Account</h1>
         <p>You are logged in as <strong id="acctUser"></strong>.</p>
