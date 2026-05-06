@@ -54,6 +54,10 @@ function renderChat() {
 
   let selectedFile = null;
   let selectedBase64 = null;
+  //loading saved chats
+  const STORAGE_KEY = 'smartspin_chat_history';
+  let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  history.forEach(msg => addMessage(msg.content, msg.role, msg.isImage));
 
   function addMessage(content, role, isImage = false) {
     const bubble = document.createElement("p");
@@ -69,9 +73,15 @@ function renderChat() {
     }
     chatWindow.appendChild(bubble);
     chatWindow.scrollTop = chatWindow.scrollHeight;
+    //save the chats no images
+    if(!isImage){
+      history.push({ content, role, isImage });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    }
+    }
+  if(history.length === 0){
+    addMessage("Hi, I'm SmartSpin. Ask me about laundry care.", "ai");
   }
-
-  addMessage("Hi, I'm SmartSpin. Ask me about laundry care.", "ai");
 
 fileInput.addEventListener("change", () => {
   const file = fileInput.files[0];
