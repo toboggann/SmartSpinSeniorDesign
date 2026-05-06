@@ -403,7 +403,7 @@ app.post("/api/chat", async (req, res) => {
           content: [
             {
               type: "input_text",
-              text: "You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice."
+              text: 'You are SmartSpin, a laundry care assistant. Give safe, simple clothing care advice. Keep replies short: 1-3 sentences unless the user asks for more detail. Do not use long explanations. Use steps if you have to. all in plain text.'
             }
           ]
         },
