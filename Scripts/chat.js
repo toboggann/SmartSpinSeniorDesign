@@ -74,12 +74,12 @@ function renderChat() {
     chatWindow.appendChild(bubble);
     chatWindow.scrollTop = chatWindow.scrollHeight;
     //save the chats no images
-    /*
+    
     if(!isImage){
       history.push({ content, role, isImage });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
     }
-      */s
+      
     }
   if(history.length === 0){
     addMessage("Hi, I'm SmartSpin. Ask me about laundry care.", "ai");
